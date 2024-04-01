@@ -1,0 +1,85 @@
+Main
+Main Initiate
+	Init game function
+	Init paddle function
+	Init ball function
+	Init demo function
+
+
+Main Update
+	Update game function
+
+	If game state = play, then
+		Update ball function
+		Update bricks function
+		Update paddle function
+
+	If game state = title, then
+		Update demo function
+	
+
+Main Draw
+	Clear screen
+
+	If game state = play, then
+		Draw paddle function
+		Draw bricks function
+		Draw ball function
+		Draw walls function
+		Draw notifications function
+		Draw lives function
+
+	If game state = title, then
+		Draw demo function
+
+
+
+Game
+Initiate Game
+	Game object
+		State = TITLE
+			LOAD (level)
+			PLAY
+			NEXT
+			WIN
+			LOSE
+		
+		Display = False
+		Level = 0
+		Ticks = 0
+
+Update Game
+	If game state = LOAD
+		When display is over (false), then
+			If game level is 0, then
+				Game state = TITLE
+			Elseif game level is 1-3, then
+				Game state = PLAY
+			Elseif game level is 4, then
+				Game state = WIN
+
+	If game state = TITLE, then
+		If x is just pressed, then
+			Game state = LOAD (level 1)
+
+	
+	If game state = PLAY, then
+		If bricks remaining = 0, then
+			Game state = NEXT
+		If player lives = 0, then
+			If player continues > 0, then
+				Reset ball
+			else
+				Game state = LOSE
+
+	If game state = NEXT, then
+		When display is over (false),
+			Game level += 1
+			Game state = LOAD (game level)
+			
+
+	If game state = LOSE, then
+		When display is over (false),
+			Print try again?
+			If x is just pressed,
+				Game state = LOAD (level 0)
