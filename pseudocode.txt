@@ -1,6 +1,8 @@
 Main
 Main Initiate
 	Init game function
+	Init player function
+	Init display function
 	Init paddle function
 	Init ball function
 	Init demo function
@@ -8,6 +10,7 @@ Main Initiate
 
 Main Update
 	Update game function
+	Update display function
 
 	If game state = play, then
 		Update ball function
@@ -44,42 +47,641 @@ Initiate Game
 			WIN
 			LOSE
 		
-		Display = False
 		Level = 0
 		Ticks = 0
 
 Update Game
 	If game state = LOAD
-		When display is over (false), then
+		If display type = NONE, then
 			If game level is 0, then
 				Game state = TITLE
 			Elseif game level is 1-3, then
 				Game state = PLAY
 			Elseif game level is 4, then
 				Game state = WIN
+				Display type = WIN
+				
 
-	If game state = TITLE, then
+	Elseif game state = TITLE, then
+		If display type = NONE, then
 		If x is just pressed, then
 			Game state = LOAD (level 1)
 
 	
-	If game state = PLAY, then
+	Elseif game state = PLAY, then
 		If bricks remaining = 0, then
 			Game state = NEXT
+			Display type = NEXT
 		If player lives = 0, then
 			If player continues > 0, then
 				Reset ball
-			else
+			Else
 				Game state = LOSE
+				Display type= LOSE
 
-	If game state = NEXT, then
-		When display is over (false),
-			Game level += 1
-			Game state = LOAD (game level)
+	Elseif game state = NEXT, then
+		If display type = NONE, then
+			Game state = LOAD (game level + 1)
 			
 
-	If game state = LOSE, then
-		When display is over (false),
-			Print try again?
-			If x is just pressed,
-				Game state = LOAD (level 0)
+	Elseif game state = LOSE, then
+If display type = NONE, then
+	Print try again?
+	If x is just pressed,
+Game state = LOAD (level 0)
+
+Player
+Initiate Player
+	Player object
+		Difficulty = easy
+		Lives = 3
+		Continues = 3
+
+Display
+
+Initiate Display
+	Display object
+		Type = NONE
+			TITLE
+			LOAD
+			NEXT
+			WIN
+LOSE
+		Timer = 0
+
+	Timer object
+		Title = 100
+		Load = 100
+		Next = 200
+		Win = 100
+		Lose = 300
+
+
+Update Display
+	If display type = NONE, then
+
+		If game state = TITLE, then
+			Display type = TITLE
+			Display timer = timer, TITLE
+		Elseif game state = LOAD, then
+			Display type = LOAD
+			Display timer = timer, LOAD
+		Elseif game state = NEXT, then
+			Display type = NEXT
+			Display timer = timer, NEXT
+		Elseif game state = LOSE, then
+			Display type = LOSE
+			Display timer = timer, LOSE
+		Elseif game state = WIN, then
+			Display type = WIN
+			Display timer = timer, WIN
+		
+Else
+		If display timer = 0, then
+			Display type = NONE
+	
+Draw Display
+
+→ Things happen here
+
+Paddle
+
+Initiate Paddle
+	Paddle object
+		Active = False
+		Color = 7
+		Speed = 2
+		X = 63
+		Y = 115
+		Width = 9
+
+
+Update Paddle
+
+If paddle is active, then
+
+If right arrow pressed, then
+Paddle x += paddle speed
+ 	
+ 		if paddle x + paddle width > 127 - level walls
+ 			Paddle x = 127 - paddle w - level walls
+
+If left arrow pressed, then
+ 		Paddle x -= paddle speed
+ 	
+ 	If paddle x - paddle width > game.walls, then
+		Paddle x = paddle width + game walls
+ 
+
+Draw Paddle
+
+	Draw a line from 
+(paddle x - paddle width, paddle y) to
+(paddle x + width, paddle y)
+Using paddle color
+
+—-----------------------------------------------------------------------
+Ball
+
+-- ball --
+
+function iball()
+	
+	ball = {}
+	
+	ball.state='stop'
+	ball.col=7
+	ball.spd=1
+	ball.x=63
+	ball.y=80
+	ball.dir={1,1}
+		
+end
+
+-- reset ball --
+function rball()
+	ball.x = 63
+	ball.y = 80
+	ball.state = 'stop'
+end
+
+-- update ball --
+function uball()
+
+	-- hold ball --
+	if ball.state == 'stop' then
+		if btnp(❎) then
+			ball.state = 'go'
+		else
+			return
+		end
+	end
+
+	-- bounce walls --
+	if ball.x >= 127-game.walls or 
+				ball.x <= game.walls then
+		ball.dir[1]*=-1
+		sfx(1)
+	end
+	
+	-- bounce ceiling --
+	if ball.y<=0 then
+		ball.dir[2]*=-1
+		sfx(1)
+	end
+	
+	-- ball fall --
+	if ball.y>=128 then
+		pdl.lives -= 1
+		game.walls += 1
+		sfx(3)
+		rball()
+	end
+	
+	-- bounce paddle --
+	if ball.x >= pdl.cs[1] and
+				ball.x <= pdl.cs[3] and
+				ball.y >= pdl.cs[2] and
+				ball.y <= pdl.cs[4] then
+				
+		ball.dir[2]*=-1
+		sfx(2)
+	end
+	
+	-- bounce bricks --
+	hit_bricks()
+	
+	-- move ball --
+	ball.x += ball.spd*ball.dir[1]
+	ball.y += ball.spd*ball.dir[2]
+	
+end
+
+-- draw ball --
+function dball()
+	pset(ball.x,ball.y,ball.col)
+end
+
+Bricks
+
+-- bricks --
+
+function ibrick()
+
+	bspawn = {}
+	
+	brick = {}
+	
+	bricks = {}
+	
+end
+	
+function ibricks()
+	
+	n_bricks = bspawn.rows *
+												bspawn.bpr
+												
+	brick.x = bspawn.x
+	brick.y = bspawn.y
+	
+	
+	for i=1,bspawn.rows do
+		bricks[i] = {}
+		
+		for j=1,bspawn.bpr do
+			bricks[i][j] = {}
+			bricks[i][j].col = brick.col
+			bricks[i][j].x = brick.x 
+			bricks[i][j].y = brick.y
+			bricks[i][j].w = brick.w
+			bricks[i][j].h = brick.h
+			bricks[i][j].cs = brick.cs
+			bricks[i][j].status = 1
+			
+			brick.x += (brick.w*2)
+													 + bspawn.xmarg
+													 + 1
+		end
+		
+		brick.x = bspawn.x
+		brick.y += (brick.h*2)
+													+ bspawn.ymarg
+													+ 1
+		brick.col += 1
+	end
+
+	for i=1,#bricks do
+		for j=1,#bricks[i] do
+	
+			bricks[i][j].cs = {
+		 	bricks[i][j].x-bricks[i][j].w,
+		 	bricks[i][j].y-bricks[i][j].h,
+		 	bricks[i][j].x+bricks[i][j].w,
+		 	bricks[i][j].y+bricks[i][j].h
+	 		}
+	 
+	 end
+	end
+
+end
+
+function ubricks()
+	if ball.state == 'stop' then
+		return
+	end
+	row = ceil(rnd(bspawn.rows))
+	column = ceil(rnd(bspawn.bpr))
+	spd = 3
+	chng = ceil(rnd(4))
+	
+	if not btn(➡️) and not btn(⬅️) then
+		return
+	end
+	if chng == 1 then
+	 bricks[row][column].cs[1] += ceil(rnd(spd)) * ball.dir[1]
+		
+		if bricks[row][column].cs[1] >
+					127 - game.walls then
+			bricks[row][column].cs[1] -=
+				spd
+			bricks[row][column].cs[3] -=
+				spd
+		elseif bricks[row][column].cs[1] <
+					game.walls then
+			bricks[row][column].cs[1] +=
+				spd
+			bricks[row][column].cs[3] +=
+				spd
+		end
+		
+		if bricks[row][column].cs[3] <
+					bricks[row][column].cs[1]
+				 + brick.wmin then
+			bricks[row][column].cs[3] =
+				bricks[row][column].cs[1]
+				 + brick.wmin
+		end
+	end
+	if chng == 2 then
+		bricks[row][column].cs[2] += ceil(rnd(spd)) * ball.dir[2]
+		
+		if bricks[row][column].cs[2] >
+					127 then
+			bricks[row][column].cs[2] -=
+				spd
+			bricks[row][column].cs[4] -=
+				spd
+		elseif bricks[row][column].cs[2] <
+					0 then
+			bricks[row][column].cs[2] +=
+				spd
+			bricks[row][column].cs[4] +=
+				spd
+		end
+		
+		if bricks[row][column].cs[4] <
+					bricks[row][column].cs[2]
+				 + brick.hmin then
+			bricks[row][column].cs[4] =
+				bricks[row][column].cs[2]
+				 + brick.hmin
+		end
+	end
+	if chng == 3 then
+		bricks[row][column].cs[3] += ceil(rnd(spd)) * ball.dir[1]
+		
+		if bricks[row][column].cs[3] >
+					127 - game.walls then
+			bricks[row][column].cs[1] -=
+				spd
+			bricks[row][column].cs[3] -=
+				spd
+		elseif bricks[row][column].cs[3] <
+					game.walls then
+			bricks[row][column].cs[1] +=
+				spd
+			bricks[row][column].cs[3] +=
+				spd
+		end
+		
+		if bricks[row][column].cs[1] >
+					bricks[row][column].cs[3]
+				 - brick.wmin then
+			bricks[row][column].cs[1] =
+				bricks[row][column].cs[3]
+				 - brick.wmin
+		end
+	end
+	if chng == 4 then
+		bricks[row][column].cs[4] += ceil(rnd(spd)) * ball.dir[2]
+		
+		if bricks[row][column].cs[4] >
+					127 then
+			bricks[row][column].cs[2] -=
+				spd
+			bricks[row][column].cs[4] -=
+				spd
+		elseif bricks[row][column].cs[4] <
+					0 then
+			bricks[row][column].cs[2] +=
+				spd
+			bricks[row][column].cs[4] +=
+				spd
+		end
+		
+		if bricks[row][column].cs[2] >
+					bricks[row][column].cs[4]
+				 - brick.hmin then
+			bricks[row][column].cs[2] =
+				bricks[row][column].cs[4]
+				 - brick.hmin
+		end
+	end
+	
+	
+end
+
+function dbricks()
+
+	for i=1,#bricks do
+		for j=1,#bricks[i] do
+			if bricks[i][j].status != 0 then
+			
+				rectfill(
+					bricks[i][j].cs[1],
+					bricks[i][j].cs[2],
+					bricks[i][j].cs[3],
+					bricks[i][j].cs[4],
+					bricks[i][j].col
+					)
+			
+			end
+		end
+	end
+end
+
+function hit_bricks()
+	for i=1,#bricks do
+		for j=1,#bricks[i] do
+		
+			b = bricks[i][j].cs
+			
+			if bricks[i][j].status != 0 and
+						ball.x >= b[1] and
+						ball.x <= b[3] and
+						ball.y >= b[2] and
+						ball.y <= b[4] then
+						
+				sfx(0)
+				bricks[i][j].status = 0
+				n_bricks -= 1
+				if n_bricks == 0 then
+					game.state = 'congrats'
+					sfx(6)
+					music(-1)
+				end
+				
+				if ball.x == b[1] or
+							ball.x == b[3] then
+							
+							ball.dir[1] *= -1
+				end
+				
+				if ball.y == b[2] or
+							ball.y == b[4] then
+							
+							ball.dir[2] *= -1
+				end
+			end
+	 end
+	end
+End
+
+
+Levels
+
+-- levels --
+
+function ilevel(level)
+
+Level object
+	Walls
+	Timer
+
+
+	if level == 0 then
+	
+		pdl.lives = 5
+		pdl.w = 9
+		
+		bspawn.rows=1
+		bspawn.bpr=1
+		bspawn.x=22
+		bspawn.y=12
+		bspawn.xmarg=3
+		bspawn.ymarg=3
+		
+		brick.w=15
+		brick.h=13
+		brick.wmin=5
+		brick.hmin=5
+		brick.status=1
+		brick.cs={}
+		
+		brick.col = 9
+		
+	end
+
+	if level == 1 then
+	
+		pdl.lives = 5
+		pdl.w = 9
+		
+		bspawn.rows=5
+		bspawn.bpr=7
+		bspawn.x=22
+		bspawn.y=12
+		bspawn.xmarg=3
+		bspawn.ymarg=3
+		
+		brick.w=5
+		brick.h=3
+		brick.wmin=5
+		brick.hmin=5
+		brick.status=1
+		brick.cs={}
+		
+		brick.col = 9
+		
+	elseif level == 2 then
+	
+		pdl.lives += 2
+		pdl.w = 8
+		
+		bspawn.rows=6
+		bspawn.bpr=9
+		bspawn.x=19
+		bspawn.y=12
+		bspawn.xmarg=2
+		bspawn.ymarg=2
+		
+		brick.w=4
+		brick.h=2
+		brick.wmin=4
+		brick.hmin=4
+		brick.status=1
+		brick.cs={}
+		
+		brick.col = 6
+		
+	elseif level == 3 then
+	
+		pdl.lives += 2
+		pdl.w = 7
+		
+		bspawn.rows=8
+		bspawn.bpr=11
+		bspawn.x=8
+		bspawn.y=12
+		bspawn.xmarg=2
+		bspawn.ymarg=2
+		
+		brick.w=4
+		brick.h=2
+		brick.status=1
+		brick.cs={}
+		
+		brick.col = 6
+		
+	end
+	
+	ibricks()
+	rball()
+	
+End
+
+—----------------------------------
+
+Scenes
+Initiate Title Scene
+
+
+Update Title Scene
+
+
+Draw Title Scene
+
+Initiate Load Scene
+
+
+Update Load Scene
+
+
+Draw Load Scene
+
+Initiate Play Scene
+
+
+Update Play Scene
+
+function dlives()
+	if game.state != 'play' then
+		return
+	end
+	
+	local x = 0
+	local y = 0
+	
+	for i=1,pdl.lives do
+		spr(1,x,y)
+		x+=8
+	end
+	
+end
+
+Draw Play Scene
+	function dwalls()
+	rectfill(0,0,game.walls,127,5)
+	
+	rectfill(127-game.walls,0,127,127,5)
+end
+
+Initiate Next Scene
+
+
+Update Next Scene
+
+
+Draw Next Scene
+
+
+Initiate Win Scene
+	—-> win scene includes credits
+
+Update Win Scene
+
+
+Draw Win Scene
+
+
+Initiate Lose Scene
+
+
+Update Lose Scene
+
+
+Draw Lose Scene
+
+
+
+function dbanner()
+	if game.state == 'menu' then
+		print('press ❎ to start',7)
+	end
+	if game.state == 'lose' then
+		print('you lose!',7)
+	end
+	if game.state == 'congrats' then
+		dcongrats()
+	end
+end
