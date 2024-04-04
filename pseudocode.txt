@@ -1,9 +1,9 @@
 Main
 Main Initiate
-	Init game function
-	Init player function
-	Init display function
-	Init paddle function
+	Init game
+	Init player
+	Init display
+	Init paddle
 	Init ball function
 	Init demo function
 
@@ -196,6 +196,8 @@ Ball object
 	R = 2
 	X = 63
 	Y = 80
+	Delta x = 1
+	Delta y = 1
 	Direction 
 X = 1
 Y =1
@@ -260,3 +262,184 @@ If ball top edge < box y - box height, then
 	Return FALSE
 
 Return TRUE
+Bricks
+Initiate Brick
+
+	Brick_spawn object
+		Rows
+		Bpr (bricks per row)
+		X
+		Y
+		Margin
+
+	Brick object
+		Color
+		X
+		Y
+		Width
+		Height
+		Max width
+		Max height
+
+	Bricks object
+	
+Initiate Bricks
+	Remaining bricks = brick_spawn rows * brick_spawn bpr
+	
+	Brick x = brick_spawn x
+Brick y = brick_spawn y
+
+	For length of brick_spawn rows, do this:
+		Bricks[i] table
+
+		For length of brick_spawn bpr, do this:
+			Bricks[i][j] table
+			Bricks[i][j] color = brick color
+			Bricks[i][j] x = brick x 
+			Bricks[i][j] y = brick y
+			Bricks[i][j] w = brick w
+			Bricks[i][j] h = brick h
+			
+			Brick x += (brick width * 2) + brick_spawn margin
+			
+		Brick x = brick_spawn x
+		Brick y = (brick height * 2) + brick_spawn margin
+		Brick color += 1
+		
+Update Bricks
+	If ball state = STOP, then
+		RETURN
+
+	If button pressed = FALSE, then
+		RETURN
+
+	
+	Local row = ceiling(random number(length of bricks))
+	Local column = ceiling(random number(length of bricks[row]))
+	Local effect = random{MOVE, GROW, SHRINK}
+	
+	If effect = MOVE, then
+		Bricks[row][column] x += ball delta x
+		Bricks[row][column] y += ball delta x
+
+		Bricks[row][column] x = mid(level walls, Bricks[row][column] x, 127 - level walls)
+		Bricks[row][column] y = mid(0, Bricks[row][column] x, 127)
+		RETURN
+	
+	Local change = random{x,y}
+
+	If effect = GROW, then
+		Bricks[row][column][change] += level change_rate
+
+		Bricks[row][column] x = mid(level walls + Bricks[row][column] width,
+Bricks[row][column] x,
+127 - level walls - Bricks[row][column] width)
+		Bricks[row][column] y = mid(Bricks[row][column] width,
+Bricks[row][column] y,
+127 - Bricks[row][column] width)
+
+		
+		RETURN
+
+	If effect = SHRINK, then
+		Bricks[row][column][change] -= level change_rate
+		RETURN
+
+Draw Bricks
+	For length of bricks, do this:
+		For length of rows of bricks, do this:
+			Local c0 = bricks[i][j] x - bricks[i][j] width
+			Local c1 = bricks[i][j] y - bricks[i][j] height
+			Local c2 = bricks[i][j] x + bricks[i][j] width
+			Local c3 = bricks[i][j] y + bricks[i][j] height
+			Draw a rectangle from (c0, c1) to (c2, c3)
+
+Hit Bricks
+	For each row in bricks, do this:
+		For each brick in the row, do this:
+			If ball collides with brick, then
+				Remove brick from bricks table
+				Remaining bricks -= 1
+				Play brick break SFX
+				RETURN
+
+
+Levels
+
+Initiate Level
+Level object = Walls
+			Timer
+			Change_rate
+
+
+	If game level = 0, then
+
+		Player lives = 5
+		Paddle width = 9
+
+		Brick_spawn rows = 1
+		Brick_spawn bpr = 1 
+		Brick_spawn x = 22
+		Brick_spawn y = 12 
+		Brick_spawn margin = 3
+		
+		Brick color = 9
+		Brick width = 15
+		Brick height = 15
+		Brick min width= 15
+		Brick min height = 15
+		
+
+	Elseif game level = 1, then
+
+		Player lives = 5
+		Paddle width = 9
+
+		Brick_spawn rows = 5
+		Brick_spawn bpr = 7
+		Brick_spawn x = 22
+		Brick_spawn y = 12 
+		Brick_spawn margin = 3
+		
+		Brick color = 9
+		Brick width = 5
+		Brick height = 3
+		Brick min width= 5
+		Brick min height = 3
+
+	Elseif game level = 2, then
+
+		Player lives += 2
+		Paddle width -= 1
+
+		Brick_spawn rows = 6
+		Brick_spawn bpr = 9
+		Brick_spawn x = 19
+		Brick_spawn y = 12 
+		Brick_spawn margin = 2
+		
+		Brick color = 9
+		Brick width = 4
+		Brick height = 2
+		Brick min width= 3
+		Brick min height = 2
+
+	Elseif game level = 3, then
+
+		Player lives += 2
+		Paddle width -= 1
+
+		Brick_spawn rows = 8
+		Brick_spawn bpr = 11
+		Brick_spawn x = 8
+		Brick_spawn y = 12 
+		Brick_spawn margin = 2
+		
+		Brick color = 9
+		Brick width = 3
+		Brick height = 1
+		Brick min width= 1
+		Brick min height = 1
+
+	Initiate bricks
+	Reset ball
