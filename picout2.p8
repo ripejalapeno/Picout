@@ -1,10 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
-version 39
+version 42
 __lua__
 function _init()
 	igame()
 	ipaddle()
 	iball()
+	ibrick()
 end
 
 function _update60()
@@ -121,14 +122,18 @@ function uball()
 	local new_y=ball.y+ball.dy
 	
 	-- bounce walls --
-	if new_x+ball.r >= 127-game.walls or 
-				new_x-ball.r <= game.walls then
+	if new_x+ball.r >= 127-game.walls then
+		new_x = 126-game.walls-ball.r
+		ball.dx*=-1
+		sfx(1)
+	elseif	new_x-ball.r <= game.walls then
+		new_x = game.walls+ball.r+1
 		ball.dx*=-1
 		sfx(1)
 	end
 	
 	-- bounce ceiling --
-	if new_y-ball.r<=game.ceil or new_y+ball.r>=127 then
+	if new_y-ball.r-1<=game.ceil or new_y+ball.r>=127 then
 		ball.dy*=-1
 		sfx(1)
 	end
@@ -242,6 +247,69 @@ end
 
 -->8
 -- bricks --
+
+function ibrick()
+	
+	bspawn = {}
+	
+	bspawn.x=15
+	bspawn.y=25
+
+	brick = {}
+	
+	brick.x=bspawn.x
+	brick.y=bspawn.y
+	brick.w=3
+	brick.h=1
+	brick.col=12
+	
+	bricks = {}
+	
+	pat = 'b1/b2/b3/b4/b5'
+	
+	gen_bricks(pat)
+	
+end
+
+function gen_bricks(pat)
+
+	for c in all(pat) do
+		if c == 'b' then
+			b = {}
+			
+			b.x=brick.x
+			b.y=brick.y
+			b.w=brick.w
+			b.h=brick.h
+			b.col=brick.col
+			add(bricks,b)
+			brick.x+=(brick.w*2)+2
+			
+		elseif c == '/' then
+			brick.x=bspawn.x
+			brick.y+=(brick.h*2)+2
+		elseif c>='2' and c<='9' then
+			for i=1,c-1 do
+				b = {}
+			
+				b.x=brick.x
+				b.y=brick.y
+				b.w=brick.w
+				b.h=brick.h
+				b.col=brick.col
+				add(bricks,b)
+				brick.x+=(brick.w*2)+2
+			end
+		end
+	end
+	
+end
+
+function dbricks()
+	for b in all(bricks) do
+		rectfill(b.x-b.w,b.y-b.h,b.x+b.w,b.y+b.h,b.col)
+	end
+end
 -->8
 -- game --
 
@@ -283,6 +351,7 @@ function dplay()
 	dbounds()
 	dpaddle()
 	dball()
+	dbricks()
 end
 -->8
 -- levels --
@@ -294,7 +363,26 @@ end
 teamwork cast / lazy devs
 	
 		collision code
+		brick generation
 				
+]]--
+-->8
+-- to do --
+
+--[[
+	
+	1 - generate bricks
+	2 - brick collision
+	2.5 - brick shifting
+	3 - lives
+	4 - levels
+	5 - particles
+	6 - music/sfx
+	7 - title screen
+	8 - credits screen
+	
+	9 - 
+	
 ]]--
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
