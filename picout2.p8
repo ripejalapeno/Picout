@@ -6,6 +6,7 @@ function _init()
 	ipaddle()
 	iball()
 	ibrick()
+	iparts()
 end
 
 function _update60()
@@ -133,9 +134,13 @@ function uball()
 	end
 	
 	-- bounce ceiling --
-	if new_y-ball.r-1<=game.ceil or new_y+ball.r>=127 then
+	if new_y-ball.r-1<=game.ceil then
 		ball.dy*=-1
 		sfx(1)
+	elseif new_y+ball.r>=127 then
+		ball.dy*=-1
+		sfx(1)
+		b_streak=0
 	end
 	
 	-- bounce paddle --
@@ -145,10 +150,15 @@ function uball()
 		else
 			ball.dy *= -1
 		end
+		b_streak=0
 	end
 
 	ball.x=new_x
 	ball.y=new_y
+	
+	if ceil(rnd(6)) == 6 then
+		ball_parts(ball.x,ball.y,ball.dx,ball.dy)
+	end
 	
 end
 
@@ -257,15 +267,21 @@ function ibrick()
 
 	brick = {}
 	
+	brick.w=3.5
+	brick.h=1.5
+	
+	bspawn.x+=brick.w
+	bspawn.y+=brick.h
 	brick.x=bspawn.x
 	brick.y=bspawn.y
-	brick.w=3
-	brick.h=1
 	brick.col=12
 	
 	bricks = {}
 	
-	pat = 'b1/b2/b3/b4/b5'
+	b_hit = 0
+	b_streak = 0
+	
+	pat = 'b3---b5/b3---b5/b3---b5/b2-----b3/b3----b3/b4/b5'
 	
 	gen_bricks(pat)
 	
@@ -288,6 +304,10 @@ function gen_bricks(pat)
 		elseif c == '/' then
 			brick.x=bspawn.x
 			brick.y+=(brick.h*2)+2
+		
+		elseif c == '-' then
+			brick.x+=(brick.w*2)+2
+			
 		elseif c>='2' and c<='9' then
 			for i=1,c-1 do
 				b = {}
@@ -300,6 +320,32 @@ function gen_bricks(pat)
 				add(bricks,b)
 				brick.x+=(brick.w*2)+2
 			end
+		end
+	end
+end
+
+function ubricks()
+
+	for b in all(bricks) do
+		for p in all(parts) do
+			if ball_hits(p.x,p.y,0,b.x,b.y,b.w,b.h) then
+				if ball_deflx(p.x,p.y,p.dx,p.dy,b.x,b.y,b.w,b.h) then
+					p.dx *= -1
+				else
+					p.dy *= -1
+				end
+			end
+		end
+		if ball_hits(ball.x,ball.y,ball.r,b.x,b.y,b.w,b.h) then
+			if ball_deflx(ball.x,ball.y,ball.dx,ball.dy,b.x,b.y,b.w,b.h) then
+				ball.dx *= -1
+			else
+				ball.dy *= -1
+			end
+			brick_parts(b.x,b.y,b.w,b.h)
+			del(bricks, b)
+			b_hit+=1
+			b_streak+=1
 		end
 	end
 	
@@ -319,7 +365,7 @@ function igame()
 	
 	game.state = 'play'
 	game.level = 1
-	game.walls = 10
+	game.walls = 16
 	game.ceil = 8
 	game.timer = 0
 	
@@ -344,35 +390,124 @@ end
 function uplay()
 	upaddle()
 	uball()
+	ubricks()
+	uparts()
 end
 
 -- draw play state --
 function dplay()
+	dparts()
 	dbounds()
 	dpaddle()
 	dball()
 	dbricks()
+	
 end
 -->8
 -- levels --
 -->8
--- credits --
+-- particles --
 
---[[ 
-				
-teamwork cast / lazy devs
+function iparts()
 	
-		collision code
-		brick generation
-				
-]]--
+	parts = {}
+	
+	gravity = .03
+	wind = .05
+	
+end
+
+function uparts()
+	for p in all(parts) do
+		p.l-=1
+		if p.l < 0 then
+			del(parts,p)
+		else
+		
+			if p.l > 125 then
+				p.c = 12
+			elseif p.l > 100 then
+				p.c = 10
+			elseif p.l > 50 then
+				p.c = 9
+			elseif p.l > 25 then
+				p.c = 8 
+			end
+			
+			if p.x > 126 - game.walls then
+				p.x = 125 - game.walls
+				p.dx *= -1
+			elseif p.x < game.walls + 1 then
+				p.x=game.walls + 2
+				p.dx *= -1
+			end
+			if p.y > 127 or p.y < 0 then
+				p.dy *= -1
+			end
+			
+			if ball_hits(p.x,p.y,0,pdl.x,pdl.y,pdl.w,pdl.h) then
+				if ball_deflx(p.x,p.y,p.dx,p.dy,pdl.x,pdl.y,pdl.w,pdl.h) then
+					p.dx *= -1
+				else
+					p.dy *= -1
+				end
+			end
+			
+			p.dy+=gravity
+			p.x+=p.dx+wind
+			p.y+=p.dy
+			
+			if btn(➡️) then
+				wind += 0.0005
+			end
+			if btn(⬅️) then
+				wind -= 0.0005
+			end
+			if wind > 0 then
+				wind -= 0.0001
+			else
+				wind += 0.0001
+			end
+			wind = mid(-1,wind,1)
+
+		end
+	end
+end
+
+function dparts()
+	for i=1,#parts do
+		pset(parts[i].x,parts[i].y,parts[i].c)
+	end
+end
+
+function brick_parts(bx,by,bw,bh)
+	for i=1,10+(b_streak*3) do
+		add(parts,{
+			x=bx+rnd((bw*2)+1)-bw,
+			y=by+rnd((bh*2)+1)-bh,
+			dx=rnd(2)-1,
+			dy=rnd(2)-1,
+			l=rnd(150),
+			c=12
+		})
+	end
+end
+
+function ball_parts(bx,by,bdx,bdy)
+	add(parts,{
+		x=bx,
+		y=by,
+		dx=(bdx*-1)+rnd(1)-.5,
+		dy=(bdy*-1)+rnd(1)-.5,
+		l=rnd(100),
+		c=12
+	})
+end
 -->8
 -- to do --
 
 --[[
 	
-	1 - generate bricks
-	2 - brick collision
 	2.5 - brick shifting
 	3 - lives
 	4 - levels
@@ -383,6 +518,19 @@ teamwork cast / lazy devs
 	
 	9 - 
 	
+]]--
+-->8
+
+-->8
+-- credits --
+
+--[[ 
+				
+teamwork cast / lazy devs
+	
+		collision code
+		brick generation
+				
 ]]--
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
