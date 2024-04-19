@@ -36,6 +36,7 @@ function ipaddle()
 		h=1
 		}
 		
+		
 end
 
 -- update paddle --
@@ -262,13 +263,17 @@ function ibrick()
 	
 	bspawn = {}
 	
-	bspawn.x=15
+	bspawn.x=10
 	bspawn.y=25
+	bspawn.minw=3
+	bspawn.minh=1
+	bspawn.maxw=5
+	bspawn.maxh=3
 
 	brick = {}
 	
-	brick.w=3.5
-	brick.h=1.5
+	brick.w=4.5
+	brick.h=2.5
 	
 	bspawn.x+=brick.w
 	bspawn.y+=brick.h
@@ -281,7 +286,7 @@ function ibrick()
 	b_hit = 0
 	b_streak = 0
 	
-	pat = 'b3---b5/b3---b5/b3---b5/b2-----b3/b3----b3/b4/b5'
+	pat = 'b7-b/b7-b/b7-b/b7-b/b7-b/b7-b2'
 	
 	gen_bricks(pat)
 	
@@ -327,14 +332,8 @@ end
 function ubricks()
 
 	for b in all(bricks) do
-		for p in all(parts) do
-			if ball_hits(p.x,p.y,0,b.x,b.y,b.w,b.h) then
-				if ball_deflx(p.x,p.y,p.dx,p.dy,b.x,b.y,b.w,b.h) then
-					p.dx *= -1
-				else
-					p.dy *= -1
-				end
-			end
+		if btn(➡️) or btn(⬅️) then
+			shift_brick(b)
 		end
 		if ball_hits(ball.x,ball.y,ball.r,b.x,b.y,b.w,b.h) then
 			if ball_deflx(ball.x,ball.y,ball.dx,ball.dy,b.x,b.y,b.w,b.h) then
@@ -355,6 +354,57 @@ function dbricks()
 	for b in all(bricks) do
 		rectfill(b.x-b.w,b.y-b.h,b.x+b.w,b.y+b.h,b.col)
 	end
+end
+
+function shift_brick(b)
+	--shift
+		--up down left right
+	if ceil(rnd(60))!=60 then
+		return
+	end
+	
+	change = ceil(rnd(8))
+	if change == 1 and btn(➡️) then
+		b.x+=1
+		if b.x+b.w > 126 - game.walls then
+			b.x = 126 - game.walls - b.w
+		end
+	elseif change == 2 and btn(⬅️) then
+		b.x-=1
+		if b.x-b.w < game.walls-1 then
+			b.x = 1+game.walls+b.w
+		end
+	elseif change == 3 and ball.dy>0 then
+		b.y+=1
+	elseif change == 4 and ball.dy<0 then
+		b.y-=1
+		if b.y-b.h < game.ceil then
+			b.y = game.ceil + b.h
+		end
+	elseif change == 5 then
+		b.w+=.5
+		if b.w > bspawn.maxw then
+			b.w = bspawn.maxw
+		end
+	elseif change == 6 then
+		b.w-=.5
+		if b.w < bspawn.minw then
+			b.w = bspawn.minw
+		end
+	elseif change == 7 then
+		b.h+=.5
+		if b.h > bspawn.maxh then
+			b.h = bspawn.maxh
+		end
+	elseif change == 8 then
+		b.h-=.5
+		if b.h < bspawn.minh then
+			b.h = bspawn.minh
+		end
+	end
+	--resize
+		--grow shrink
+	
 end
 -->8
 -- game --
@@ -508,15 +558,26 @@ end
 
 --[[
 	
-	2.5 - brick shifting
 	3 - lives
 	4 - levels
-	5 - particles
 	6 - music/sfx
 	7 - title screen
 	8 - credits screen
 	
-	9 - 
+	ideas
+	
+	special powers
+	-x to launch paddle in a line
+		upward, breaking bricks in
+		its path
+		
+		an outline of the paddle's
+		return location will be held
+		using rectfill and fillp░
+		
+	-powerball that tears through
+		any bricks it touches, with
+		larger radius
 	
 ]]--
 -->8
