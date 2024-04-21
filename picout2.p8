@@ -3,16 +3,21 @@ version 42
 __lua__
 function _init()
 	igame()
+	ilevel()
 	ipaddle()
 	iball()
 	ibrick()
 	iparts()
+	gen_bricks(level[1])
 	iplay()
 end
 
 function _update60()
+	ugame()
 	if game.state == 'play' then
 		uplay()
+	elseif game.state == 'win' then
+		uwin()
 	end
 end
 
@@ -20,7 +25,12 @@ function _draw()
 	cls()
 	if game.state == 'play' then
 		dplay()
+	elseif game.state == 'restart' then
+		drestart()
+	elseif game.state == 'win' then
+		dwin()
 	end
+	--print(game.state)
 end
 -->8
 -- paddle --
@@ -294,9 +304,9 @@ function ibrick()
 	b_hit = 0
 	b_streak = 0
 	
-	pat = 'b6-b/b6-b/b6-b/b6-b/b6-b/b6-b'
+	--'b6-b/b6-b/b6-b/b6-b/b6-b/b6-b'
 	
-	gen_bricks(pat)
+	
 	
 end
 
@@ -429,10 +439,12 @@ function igame()
 	game.walls = 16
 	game.ceil = 7
 	game.timer = 0
+	game.display = false
+	game.notif = nil
 	
 	player = {}
 	
-	player.lives = 5
+	player.lives = 3
 	
 	parts = {}
 	
@@ -444,9 +456,59 @@ end
 function ugame()
 	if game.state=='play' then
 		if player.lives<=0 then
-			_init()
+			game.state='restart'
+		elseif #bricks==0 then
+			iwin(game.level)
+		end
+	elseif game.state=='win' then
+		if btnp(❎) then
+			game.level+=1
+			game.state='load'
+			iload(game.level)
+		end
+	elseif game.state=='restart' then
+		if btnp(❎) then
+			iload(game.level)
+			player.lives=3
+			iplay()
+		end
+	elseif game.state=='load' then
+		if game.display=='false' then
+			game.state='play'
 		end
 	end
+end
+
+function drestart()
+	dplay()
+end
+
+function iload(lvl)
+	ibrick()
+	ipaddle()
+	iball()
+	gen_bricks(level[lvl])
+	game.state='play'
+end
+
+
+function iwin(lvl)
+	music(-1)
+	sfx(6)
+	if lvl == 3 then
+		game.state='end'
+		_init()
+	else
+		game.state='win'
+	end
+end
+
+function uwin()
+	uparts()
+end
+
+function dwin()
+	dplay()
 end
 
 function dbounds()
@@ -474,7 +536,6 @@ end
 
 -- update play state --
 function uplay()
-	ugame()
 	upaddle()
 	uball()
 	ubricks()
@@ -492,6 +553,14 @@ function dplay()
 end
 -->8
 -- levels --
+
+function ilevel()
+	level = {}
+	
+	level[1] = 'b'
+	level[2] = 'b2'
+	level[3] = 'b6-b/b6-b/b6-b/b6-b/b6-b/b6-b'
+end
 -->8
 -- particles --
 
@@ -584,8 +653,8 @@ function ball_parts(bx,by,bdx,bdy)
 	add(parts,{
 		x=bx,
 		y=by,
-		dx=(bdx*-1)+rnd(1)-.5,
-		dy=(bdy*-1)+rnd(1)-.5,
+		dx=(bdx*-.5)+rnd(1)-.5,
+		dy=(bdy*-.5)+rnd(1)-.5,
 		l=rnd(100),
 		c=12
 	})
@@ -595,7 +664,6 @@ end
 
 --[[
 	
-	4 - levels
 	7 - title screen
 	8 - credits screen
 	
