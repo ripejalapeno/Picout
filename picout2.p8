@@ -18,6 +18,8 @@ function _update60()
 		uplay()
 	elseif game.state == 'win' then
 		uwin()
+	elseif game.state == 'load' then
+		uload()
 	end
 end
 
@@ -29,6 +31,8 @@ function _draw()
 		drestart()
 	elseif game.state == 'win' then
 		dwin()
+	elseif game.state=='load' then
+		dload()
 	end
 	--print(game.state)
 end
@@ -109,7 +113,7 @@ end
 -- reset ball --
 function rball()
 	ball.x = pdl.x
-	ball.y = pdl.y
+	ball.y=pdl.y-ball.r-pdl.h-1
 	ball.dy = -1
 	ball.state = 'sticky'
 end
@@ -463,18 +467,21 @@ function ugame()
 	elseif game.state=='win' then
 		if btnp(❎) then
 			game.level+=1
-			game.state='load'
 			iload(game.level)
 		end
 	elseif game.state=='restart' then
 		if btnp(❎) then
 			iload(game.level)
 			player.lives=3
-			iplay()
 		end
 	elseif game.state=='load' then
-		if game.display=='false' then
+		game.timer+=1
+		if game.timer==60 then
+			game.timer=0
 			game.state='play'
+			
+		--if game.display=='false' then
+			--game.state='play'
 		end
 	end
 end
@@ -484,11 +491,19 @@ function drestart()
 end
 
 function iload(lvl)
+	game.state='load'
 	ibrick()
 	ipaddle()
-	iball()
+	rball()
 	gen_bricks(level[lvl])
-	game.state='play'
+end
+
+function uload()
+	uparts()
+end
+
+function dload()
+	dplay()
 end
 
 
@@ -664,6 +679,23 @@ end
 
 --[[
 	
+	1 - congrats for winning level
+	
+	2 - info banner on top
+						to show level number
+						and helpful tips
+						
+						1 - ceiling gets wider
+						2 - black rect slides in
+						3 - notification slides in
+						4 - notif stays a moment
+						5 - notif slides out
+						6 - rect slides out
+						7 - ceiling shrinks to norm
+											size again
+											
+	3 - brick chains
+	4 - angle control
 	7 - title screen
 	8 - credits screen
 	
