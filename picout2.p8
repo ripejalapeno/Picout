@@ -4,6 +4,7 @@ __lua__
 function _init()
 	igame()
 	ilevel()
+	ibanner()
 	ipaddle()
 	iball()
 	ibrick()
@@ -441,10 +442,10 @@ function igame()
 	game.state = 'play'
 	game.level = 1
 	game.walls = 16
-	game.ceil = 7
+	game.ceil = 8
+	game.ceilc = 6
 	game.timer = 0
 	game.display = false
-	game.notif = nil
 	
 	player = {}
 	
@@ -454,6 +455,8 @@ function igame()
 	
 	gravity = .03
 	wind = .05
+	
+	pal(4,5+128,1)
 	
 end
 
@@ -492,6 +495,7 @@ end
 
 function iload(lvl)
 	game.state='load'
+	banner.notif='level '..game.level
 	ibrick()
 	ipaddle()
 	rball()
@@ -533,12 +537,12 @@ function dbounds()
 	rectfill(127-game.walls,0,127,127,5)
 	
 	-- ceiling --
-	rectfill(0,0,127,game.ceil,6)
+	rectfill(0,0,127,game.ceil,game.ceilc)
 end
 
 function dlives()
 	for i=1,player.lives do
-		spr(0,35+(i*8))
+		spr(0,(i*8))
 	end
 end
 
@@ -561,6 +565,7 @@ end
 function dplay()
 	dparts()
 	dbounds()
+	dbanner()
 	dpaddle()
 	dball()
 	dbricks()
@@ -675,6 +680,37 @@ function ball_parts(bx,by,bdx,bdy)
 	})
 end
 -->8
+-- notif banner --
+
+function ibanner()
+	banner = {}
+	
+	banner.x = 63.5
+	banner.y = 4
+	banner.w = 15
+	banner.h = 3
+	banner.bgc = 4
+	banner.textc = 7
+	banner.l = banner.x+banner.w
+	banner.r = banner.l
+	banner.notif = 'level '..game.level
+
+end
+
+function ubanner()
+	if banner.notif==nil then
+		return
+	end
+end
+
+function dbanner()
+	if banner.notif==nil then
+		return
+	end
+	rectfill(banner.x-banner.w,banner.y-banner.h,banner.x+banner.w,banner.y+banner.h,banner.bgc)
+	print(banner.notif,banner.x-banner.w+2,banner.y-2,banner.textc)
+end
+-->8
 -- to do --
 
 --[[
@@ -715,8 +751,6 @@ end
 		larger radius
 	
 ]]--
--->8
-
 -->8
 -- credits --
 
