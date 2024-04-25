@@ -9,8 +9,7 @@ function _init()
 	iball()
 	ibrick()
 	iparts()
-	gen_bricks(level[1])
-	iplay()
+	iload(game.level)
 end
 
 function _update60()
@@ -288,10 +287,7 @@ function ibrick()
 	
 	bspawn.x=game.walls+2
 	bspawn.y=game.ceil+10
-	bspawn.minw=3
-	bspawn.minh=1
-	bspawn.maxw=5
-	bspawn.maxh=3
+	
 
 	brick = {}
 	
@@ -365,7 +361,20 @@ function ubricks()
 			else
 				ball.dy *= -1
 			end
-			sfx(0)
+			if b_streak<=3 then
+				b_sfx=25
+			elseif b_streak<=5 then
+				b_sfx=26
+			elseif b_streak<=7 then
+				b_sfx=27
+			elseif b_streak<=9 then
+				b_sfx=28
+			elseif b_streak<=11 then
+				b_sfx=29
+			elseif b_streak<=15 then
+				b_sfx=30
+			end
+			sfx(b_sfx)
 			brick_parts(b.x,b.y,b.w,b.h)
 			del(bricks, b)
 			b_hit+=1
@@ -385,7 +394,7 @@ end
 function shift_brick(b)
 	--shift
 		--up down left right
-	if ceil(rnd(60))!=60 then
+	if ceil(rnd(50))!=50 then
 		return
 	end
 	
@@ -493,15 +502,6 @@ function drestart()
 	dplay()
 end
 
-function iload(lvl)
-	game.state='load'
-	banner.notif='level '..game.level
-	ibrick()
-	ipaddle()
-	rball()
-	gen_bricks(level[lvl])
-end
-
 function uload()
 	uparts()
 end
@@ -514,6 +514,8 @@ end
 function iwin(lvl)
 	music(-1)
 	sfx(6)
+	game.timer=0
+	banner.notif='you win!'
 	if lvl == 3 then
 		game.state='end'
 		_init()
@@ -524,6 +526,11 @@ end
 
 function uwin()
 	uparts()
+	if game.timer<=300 then
+		game.timer+=1
+	else
+		banner.notif='press ❎'
+	end
 end
 
 function dwin()
@@ -549,8 +556,6 @@ end
 -- init play state --
 function iplay()
 	game.state = 'play'
-	sfx(4,3)
-	music(0,5000)
 end
 
 -- update play state --
@@ -577,9 +582,56 @@ end
 function ilevel()
 	level = {}
 	
-	level[1] = 'b'
-	level[2] = 'b2'
-	level[3] = 'b6-b/b6-b/b6-b/b6-b/b6-b/b6-b'
+	level[0] = 'b'
+	level[1] = '/----b4/---b5/--b6/-b7/-b7/-b7'
+	level[2] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
+	level[3] = 'b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
+
+end
+
+function iload(lvl)
+	game.timer=0
+	game.state='load'
+	banner.notif='level '..game.level
+	ibrick()
+	ipaddle()
+	rball()
+	gen_bricks(level[lvl])
+	sfx(4,3)
+	music(0,5000)
+	
+	if game.level == 0 then
+		bspawn.minw=3
+		bspawn.minh=1
+		bspawn.maxw=5
+		bspawn.maxh=3
+	
+	elseif game.level == 1 then
+		bspawn.minw=3
+		bspawn.minh=2
+		bspawn.maxw=6
+		bspawn.maxh=4
+		
+		player.lives=3
+		
+	elseif game.level == 2 then
+		bspawn.minw=2
+		bspawn.minh=2
+		bspawn.maxw=5
+		bspawn.maxh=3
+		
+		player.lives+=2
+		
+	
+	elseif game.level == 3 then
+		bspawn.minw=1
+		bspawn.minh=1
+		bspawn.maxw=3
+		bspawn.maxh=2
+		
+		player.lives+=2
+		
+	end
 end
 -->8
 -- particles --
@@ -599,8 +651,10 @@ function uparts()
 		if p.l < 0 then
 			del(parts,p)
 		else
-		
-			if p.l > 125 then
+			
+			if p.l > 200 then
+				p.c = 11
+			elseif p.l > 125 then
 				p.c = 12
 			elseif p.l > 100 then
 				p.c = 10
@@ -657,13 +711,17 @@ function dparts()
 end
 
 function brick_parts(bx,by,bw,bh)
-	for i=1,10+(b_streak*3) do
+	for i=1,15+(b_streak*3) do
+		local life=rnd(150)
+		if b_streak>5 then
+			life+=100
+		end
 		add(parts,{
 			x=bx+rnd((bw*2)+1)-bw,
 			y=by+rnd((bh*2)+1)-bh,
 			dx=rnd(2)-1,
 			dy=rnd(2)-1,
-			l=rnd(150),
+			l=life,
 			c=12
 		})
 	end
@@ -687,7 +745,7 @@ function ibanner()
 	
 	banner.x = 63.5
 	banner.y = 4
-	banner.w = 15
+	banner.w = 17
 	banner.h = 3
 	banner.bgc = 4
 	banner.textc = 7
@@ -796,6 +854,12 @@ d71000001f7511f7511f7511f75121751217512475124751217512175121751217511f7511f7511f
 d7100000247512475124751247512675126751287512875126751267512675126751247512475124751247511f7511f7511f7511f75021751217512475124750217512175121751217501f7511f7511f7511f751
 d1100000247512475124751247512475124751247512475124740247402474024740247302473024720247101c7001d7001d7001c7001c7001c7001c7001c7001670016700167001670015700157001370013700
 d1100000287512875128751287512875128751287512875128740287402874028740287302873028720287101c7001d7001d7001c7001c7001c7001c7001c7001670016700167001670015700157001370013700
+4801000024510275202b530305403554038550335402e52029510235101d51019510135100f5100c5100851006510045100150000500005000050000400000000000000000000000000000000000000000000000
+4801000025510285202d530315403654039550355402f5202b510245101e5101a51014510115100d5100951006510055100351000500005000050000400000000000000000000000000000000000000000000000
+4801000027510295202f53033540385403b55037540315202c51025510205101b51016510135100f5100a51009510075100551002510005000050000400000000000000000000000000000000000000000000000
+48010000285102a5203053034540395403c55038540325302d52026520215101c5101751014510105100c5100a510085100651003510015000a500135001c500235002e5002d50001500015002b5000000000000
+480100000b5101853027540325503a5503d56038550325402c530295202652023520205101d5101b510185101551013510105100d51009510045000050000500235002e5002d50001500015002b5000000000000
+480100000b5102252033530395403f5503f560395503654035530325202e5202b5202751024510205101d5101851015510105100d5100b51009510055100151000510025000050000500015002b5000000000000
 __music__
 01 0b424344
 00 07424344
