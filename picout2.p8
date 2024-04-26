@@ -20,6 +20,8 @@ function _update60()
 		uwin()
 	elseif game.state == 'load' then
 		uload()
+	elseif game.state == 'lose' then
+		ulose()
 	end
 end
 
@@ -27,14 +29,14 @@ function _draw()
 	cls()
 	if game.state == 'play' then
 		dplay()
-	elseif game.state == 'restart' then
-		drestart()
+	elseif game.state == 'lose' then
+		dlose()
 	elseif game.state == 'win' then
 		dwin()
 	elseif game.state=='load' then
 		dload()
 	end
-	--print(game.state)
+	--print(wind)
 end
 -->8
 -- paddle --
@@ -161,7 +163,8 @@ function uball()
 		sfx(3)
 		b_streak=0
 		game.walls+=1
-		brick_parts(8*player.lives,game.ceil,0,0)
+		ifwork(8+(player.lives*8),5,8,50)
+		--spr(0,(i*8))
 		rball()
 	end
 	
@@ -287,7 +290,6 @@ function ibrick()
 	
 	bspawn.x=game.walls+2
 	bspawn.y=game.ceil+10
-	
 
 	brick = {}
 	
@@ -313,8 +315,18 @@ end
 
 function gen_bricks(pat)
 
+	skip=false
+	i=1
+	
+	brick.w=4.5
+	brick.h=2.5
+
 	for c in all(pat) do
-		if c == 'b' then
+	
+		if skip==true then
+			skip=false
+			
+		elseif c == 'b' then
 			b = {}
 			
 			b.x=brick.x
@@ -333,6 +345,14 @@ function gen_bricks(pat)
 		elseif c == '-' then
 			brick.x+=(brick.w*2)+2
 			
+		elseif c == 'w' then
+			brick.w=pat[i+1]
+			skip=true
+			
+		elseif c == 'h' then
+			brick.h=pat[i+1]
+			skip=true
+			
 		elseif c>='2' and c<='9' then
 			for i=1,c-1 do
 				b = {}
@@ -346,6 +366,7 @@ function gen_bricks(pat)
 				brick.x+=(brick.w*2)+2
 			end
 		end
+		i+=1
 	end
 end
 
@@ -449,7 +470,7 @@ function igame()
 	game = {}
 	
 	game.state = 'play'
-	game.level = 1
+	game.level = 0
 	game.walls = 16
 	game.ceil = 8
 	game.ceilc = 6
@@ -458,7 +479,7 @@ function igame()
 	
 	player = {}
 	
-	player.lives = 3
+	player.lives = 1
 	
 	parts = {}
 	
@@ -469,10 +490,12 @@ function igame()
 	
 end
 
+-- game state machine --
+------------------------
 function ugame()
 	if game.state=='play' then
 		if player.lives<=0 then
-			game.state='restart'
+			ilose()
 		elseif #bricks==0 then
 			iwin(game.level)
 		end
@@ -481,7 +504,7 @@ function ugame()
 			game.level+=1
 			iload(game.level)
 		end
-	elseif game.state=='restart' then
+	elseif game.state=='lose' then
 		if btnp(❎) then
 			iload(game.level)
 			player.lives=3
@@ -491,19 +514,47 @@ function ugame()
 		if game.timer==60 then
 			game.timer=0
 			game.state='play'
-			
-		--if game.display=='false' then
-			--game.state='play'
 		end
 	end
 end
 
-function drestart()
-	dplay()
+
+-- play state --
+----------------
+
+-- init play state
+function iplay()
+	game.state = 'play'
 end
+
+-- update play state
+function uplay()
+	upaddle()
+	uball()
+	ubricks()
+	uparts()
+	ufworks()
+end
+
+-- draw play state
+function dplay()
+	uwind()
+	dparts()
+	dbounds()
+	dbanner()
+	dpaddle()
+	dball()
+	dbricks()
+	dlives()
+	dfworks()
+end
+
+-- load state --
+----------------
 
 function uload()
 	uparts()
+	ufworks()
 end
 
 function dload()
@@ -511,29 +562,97 @@ function dload()
 end
 
 
+
+-- win state --
+---------------
+
+-- init win state
 function iwin(lvl)
 	music(-1)
 	sfx(6)
+	
+	--heart explosions
+	for i=0,player.lives do 
+		ifwork(8+(i*8),5,8,50)
+	end
+	
+	--ball explosion
+	ifwork(ball.x,ball.y,ball.col,75)
+	ifwork(ball.x,ball.y,ball.col-1)
+	
 	game.timer=0
 	banner.notif='you win!'
-	if lvl == 3 then
-		game.state='end'
-		_init()
-	else
-		game.state='win'
-	end
+	game.state='win'
 end
 
+--update win state
 function uwin()
 	uparts()
-	if game.timer<=300 then
-		game.timer+=1
-	else
+	ufworks()
+	upaddle()
+	uwind()
+	
+	if game.timer%(75-(game.level*10))==1 then
+		ifwork()
+		sfx(31)
+	end
+	
+	if game.timer%(200-(game.level*15))==1 then
+		local x = rnd(120)+4
+		local y = rnd(120)+4
+		local c = 7+ceil(rnd(5))
+		local mag = 50+(game.level*20)
+		
+		ifwork(x,y,c,mag)
+		ifwork(x,y,c+1,mag/2)
+		
+		sfx(33)
+	end
+		
+	
+	if game.timer==300 then
 		banner.notif='press ❎'
 	end
+	
+	game.timer+=1
+	
 end
 
+-- draw win state
 function dwin()
+	dparts()
+	dbounds()
+	dbanner()
+	dpaddle()
+	dfworks()
+end
+
+-- lose state --
+----------------
+
+-- init lose
+function ilose()
+	game.state='lose'
+	music(-1)
+	sfx(5)
+	banner.notif='you lose!'
+	game.timer=0
+end
+
+-- update lose
+function ulose()
+	uparts()
+	ufworks()
+	uball()
+	
+	if game.timer==150 then
+		banner.notif='press ❎'
+	end
+	game.timer+=1
+end
+
+-- draw lose
+function dlose()
 	dplay()
 end
 
@@ -553,39 +672,17 @@ function dlives()
 	end
 end
 
--- init play state --
-function iplay()
-	game.state = 'play'
-end
 
--- update play state --
-function uplay()
-	upaddle()
-	uball()
-	ubricks()
-	uparts()
-end
-
--- draw play state --
-function dplay()
-	dparts()
-	dbounds()
-	dbanner()
-	dpaddle()
-	dball()
-	dbricks()
-	dlives()
-end
 -->8
 -- levels --
 
 function ilevel()
 	level = {}
 	
-	level[0] = 'b'
-	level[1] = '/----b4/---b5/--b6/-b7/-b7/-b7'
-	level[2] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
-	level[3] = 'b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
+	level[0] = 'b'--
+	level[1] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
+	level[2] = '/----b4/---b5/--b6/-b7/-b7/-b7'
+	level[3] = 'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
 
 end
 
@@ -631,7 +728,11 @@ function iload(lvl)
 		
 		player.lives+=2
 		
+	else
+		game.state='end'
+		_init()
 	end
+		
 end
 -->8
 -- particles --
@@ -639,6 +740,7 @@ end
 function iparts()
 	
 	parts = {}
+	fworks = {}
 	
 	gravity = .03
 	wind = .05
@@ -686,22 +788,24 @@ function uparts()
 			p.dy+=gravity
 			p.x+=p.dx+wind
 			p.y+=p.dy
-			
-			if btn(➡️) then
-				wind += 0.0005
-			end
-			if btn(⬅️) then
-				wind -= 0.0005
-			end
-			if wind > 0 then
-				wind -= 0.0001
-			else
-				wind += 0.0001
-			end
-			wind = mid(-1,wind,1)
 
 		end
 	end
+end
+
+function uwind()
+	if btn(➡️) then
+		wind += 0.02
+	end
+	if btn(⬅️) then
+		wind -= 0.02
+	end
+	if wind > 0 then
+		wind -= 0.005
+	elseif wind < 0 then
+		wind += 0.005
+	end
+	wind = mid(-1,wind,1)
 end
 
 function dparts()
@@ -736,6 +840,70 @@ function ball_parts(bx,by,bdx,bdy)
 		l=rnd(100),
 		c=12
 	})
+end
+
+-- fireworks --
+---------------
+
+-- init firework
+function ifwork(genx,geny,col,mag)
+	if genx==nil then
+		genx=rnd(128-(game.walls*2))+game.walls
+	end
+	if geny==nil then
+		geny=rnd(128-game.ceil)+game.ceil
+	end
+	if col==nil then
+		col=7+ceil(rnd(5))
+	end
+	if mag==nil then
+		mag=25
+	end
+	local size=rnd(5)
+	for i=0,mag+rnd(40) do
+		add(fworks,{
+			x=genx+(rnd(size)-(size/2)),
+			y=geny+(rnd(size)-(size/2)),
+			dx=rnd(3)-1.5,
+			dy=rnd(3)-1.5,
+			l=rnd(100),
+			c=col
+		})
+	end
+end
+
+-- update firework particles
+function ufworks()
+
+	for fw in all(fworks) do
+		fw.l-=1
+		if fw.l < 0 then
+			del(fworks,fw)
+		else
+			fw.dy+=gravity
+			fw.x+=fw.dx+wind
+			fw.y+=fw.dy
+		end
+		
+		if fw.x > 127 then
+				fw.x = 127
+				fw.dx *= -1
+			elseif fw.x < 1 then
+				fw.x= 1
+				fw.dx *= -1
+			end
+			if fw.y > 127 or fw.y < 0 then
+				fw.dy *= -1
+			end
+	end
+	
+end
+
+-- draw firework particles
+function dfworks()
+	for fw in all(fworks) do
+		pset(fw.x,fw.y,fw.c)
+	end
 end
 -->8
 -- notif banner --
@@ -860,6 +1028,9 @@ d1100000287512875128751287512875128751287512875128740287402874028740287302873028
 48010000285102a5203053034540395403c55038540325302d52026520215101c5101751014510105100c5100a510085100651003510015000a500135001c500235002e5002d50001500015002b5000000000000
 480100000b5101853027540325503a5503d56038550325402c530295202652023520205101d5101b510185101551013510105100d51009510045000050000500235002e5002d50001500015002b5000000000000
 480100000b5102252033530395403f5503f560395503654035530325202e5202b5202751024510205101d5101851015510105100d5100b51009510055100151000510025000050000500015002b5000000000000
+6a03000003113081130d1131111314123191231e12329133321430010300103001030010300103001030010300103001030010300103001030010300103001030010300103001030010300103001030010300103
+3c03000003113081130d1231112314133191331e14329143321531b133151230e1130c1130a113071130611304113001030010300103001030010300103001030010300103001030010300103001030010300103
+3c030000091630b1630d14310133161331d1432114325143271532b16333153221431f1331c1231a113161130f1130b1130811303113031130311302103021030010300103001030010300103001030010300103
 __music__
 01 0b424344
 00 07424344
