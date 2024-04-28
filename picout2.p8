@@ -9,32 +9,40 @@ function _init()
 	iball()
 	ibrick()
 	iparts()
-	iload(game.level)
+	imenu()
 end
 
 function _update60()
 	ugame()
-	if game.state == 'play' then
+	if game.state=='menu' then
+		umenu()
+	elseif game.state=='play' then
 		uplay()
-	elseif game.state == 'win' then
+	elseif game.state=='win' then
 		uwin()
-	elseif game.state == 'load' then
+	elseif game.state=='load' then
 		uload()
-	elseif game.state == 'lose' then
+	elseif game.state=='lose' then
 		ulose()
+	elseif game.state=='end' then
+		uend()
 	end
 end
 
 function _draw()
 	cls()
-	if game.state == 'play' then
+	if game.state=='menu' then
+		dmenu()
+	elseif game.state=='play' then
 		dplay()
-	elseif game.state == 'lose' then
+	elseif game.state=='lose' then
 		dlose()
-	elseif game.state == 'win' then
+	elseif game.state=='win' then
 		dwin()
 	elseif game.state=='load' then
 		dload()
+	elseif game.state=='end' then
+		dend()
 	end
 	--print(wind)
 end
@@ -470,7 +478,8 @@ function igame()
 	game = {}
 	
 	game.state = 'play'
-	game.level = 0
+	game.level = 1
+	game.tlvls = 3
 	game.walls = 16
 	game.ceil = 8
 	game.ceilc = 6
@@ -493,7 +502,11 @@ end
 -- game state machine --
 ------------------------
 function ugame()
-	if game.state=='play' then
+	if game.state=='menu' then
+		if btnp(❎) then
+			iload(game.level)
+		end
+	elseif game.state=='play' then
 		if player.lives<=0 then
 			ilose()
 		elseif #bricks==0 then
@@ -504,10 +517,16 @@ function ugame()
 			game.level+=1
 			iload(game.level)
 		end
+	elseif game.state=='end' then
+		if btnp(❎) then
+			_init()
+		end
 	elseif game.state=='lose' then
 		if btnp(❎) then
 			iload(game.level)
 			player.lives=3
+		elseif btnp(🅾️) then
+			_init()
 		end
 	elseif game.state=='load' then
 		game.timer+=1
@@ -549,8 +568,32 @@ function dplay()
 	dfworks()
 end
 
+-- menu state --
+----------------
+
+function imenu()
+	game.state='menu'
+	banner.notif='picout-8'
+	game.timer=0
+end
+
+function umenu()
+	if game.timer==60 then
+		banner.notif='press ❎'
+	end
+	game.timer+=1
+end
+
+function dmenu()
+	dbounds()
+	dbanner()
+end
+
 -- load state --
 ----------------
+
+-- iload function on level page
+--	>>>
 
 function uload()
 	uparts()
@@ -583,6 +626,11 @@ function iwin(lvl)
 	game.timer=0
 	banner.notif='you win!'
 	game.state='win'
+	
+	if lvl == game.tlvls then
+		game.state='end'
+	end
+	
 end
 
 --update win state
@@ -627,6 +675,22 @@ function dwin()
 	dfworks()
 end
 
+-- end state --
+---------------
+
+function uend()
+	uwin()
+end
+
+function dend()
+	dwin()
+	i=0
+	for c in all(credits) do
+		print(c,game.walls+5,game.ceil+3+(i*6),7)
+		i+=1
+	end
+end
+
 -- lose state --
 ----------------
 
@@ -656,6 +720,8 @@ function dlose()
 	dplay()
 end
 
+
+
 function dbounds()
 
 	-- walls --
@@ -679,10 +745,11 @@ end
 function ilevel()
 	level = {}
 	
-	level[0] = 'b'--
-	level[1] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
-	level[2] = '/----b4/---b5/--b6/-b7/-b7/-b7'
+	level[0] = 'h2/b8/b7/b6/b5/b4/b3/b2/b1'
+	level[1] = '/----b4/---b5/--b6/-b7/-b7/-b7'
+	level[2] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
 	level[3] = 'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
+	level[4] = 'b'--
 
 end
 
@@ -729,8 +796,7 @@ function iload(lvl)
 		player.lives+=2
 		
 	else
-		game.state='end'
-		_init()
+		iend()
 	end
 		
 end
@@ -941,25 +1007,12 @@ end
 
 --[[
 	
-	1 - congrats for winning level
-	
-	2 - info banner on top
-						to show level number
-						and helpful tips
-						
-						1 - ceiling gets wider
-						2 - black rect slides in
-						3 - notification slides in
-						4 - notif stays a moment
-						5 - notif slides out
-						6 - rect slides out
-						7 - ceiling shrinks to norm
-											size again
-											
-	3 - brick chains
+	1 - sliding banner
+					-banner slides down to
+						center between levels
+						for you win, you lose,
 	4 - angle control
 	7 - title screen
-	8 - credits screen
 	
 	ideas
 	
@@ -988,6 +1041,20 @@ teamwork cast / lazy devs
 		brick generation
 				
 ]]--
+
+credits = {
+	'picout-8',
+	'',
+	'created by',
+	'	ripe jalapeno studios',
+	'',
+	'special thanks to',
+	' christian',
+	'	from lazy devs',
+	'	for collision code',
+	'	and brick generation'
+	}
+	 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00880880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
