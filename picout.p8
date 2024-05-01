@@ -44,7 +44,7 @@ function _draw()
 	elseif game.state=='end' then
 		dend()
 	end
-	--print(wind)
+	--print(bricks[1].minh)
 end
 -->8
 -- paddle --
@@ -303,6 +303,10 @@ function ibrick()
 	
 	brick.w=4.5
 	brick.h=2.5
+	brick.minw=0
+	brick.minh=0
+	brick.maxw=0
+	brick.maxh=0
 	
 	bspawn.x+=brick.w
 	bspawn.y+=brick.h
@@ -323,16 +327,20 @@ end
 
 function gen_bricks(pat)
 
-	skip=false
+	skip=0
 	i=1
 	
 	brick.w=4.5
 	brick.h=2.5
+	brick.minw=bspawn.minw
+	brick.minh=bspawn.minh
+	brick.maxw=bspawn.maxw
+	brick.maxh=bspawn.maxh
 
 	for c in all(pat) do
 	
-		if skip==true then
-			skip=false
+		if skip>0 then
+			skip-=1
 			
 		elseif c == 'b' then
 			b = {}
@@ -341,6 +349,10 @@ function gen_bricks(pat)
 			b.y=brick.y
 			b.w=brick.w
 			b.h=brick.h
+			b.minw=brick.minw
+			b.minh=brick.minh
+			b.maxw=brick.maxw
+			b.maxh=brick.maxh
 			b.col=brick.col
 			add(bricks,b)
 			brick.x+=(brick.w*2)+2
@@ -355,15 +367,34 @@ function gen_bricks(pat)
 			
 		elseif c=='c' then
 			brick.col=pat[i+1]
-			skip=true
+			skip+=1
 			
 		elseif c == 'w' then
 			brick.w=pat[i+1]
-			skip=true
+			skip+=1
 			
 		elseif c == 'h' then
 			brick.h=pat[i+1]
-			skip=true
+			skip+=1
+			
+		elseif c=='m' then
+			local n = tonum(pat[i+3])
+		
+			if pat[i+1]=='n' then
+				if pat[i+2]=='w' then
+					brick.minw=n
+				elseif pat[i+2]=='h' then
+					brick.minh=n
+				end
+				
+			elseif pat[i+1]=='x' then
+				if pat[i+2]=='w' then
+					brick.maxw=n
+				elseif pat[i+2]=='h' then
+					brick.maxh=n
+				end
+			end
+			skip+=3
 			
 		elseif c>='2' and c<='9' then
 			for i=1,c-1 do
@@ -373,6 +404,10 @@ function gen_bricks(pat)
 				b.y=brick.y
 				b.w=brick.w
 				b.h=brick.h
+				b.minw=brick.minw
+				b.minh=brick.minh
+				b.maxw=brick.maxw
+				b.maxh=brick.maxh
 				b.col=brick.col
 				add(bricks,b)
 				brick.x+=(brick.w*2)+2
@@ -427,7 +462,7 @@ end
 function shift_brick(b)
 	--shift
 		--up down left right
-	if ceil(rnd(50))!=50 then
+	if ceil(rnd(45))!=45 then
 		return
 	end
 	
@@ -451,23 +486,23 @@ function shift_brick(b)
 		end
 	elseif change == 5 then
 		b.w+=.5
-		if b.w > bspawn.maxw then
-			b.w = bspawn.maxw
+		if b.w > b.maxw then
+			b.w = b.maxw
 		end
 	elseif change == 6 then
 		b.w-=.5
-		if b.w < bspawn.minw then
-			b.w = bspawn.minw
+		if b.w < b.minw then
+			b.w = b.minw
 		end
 	elseif change == 7 then
 		b.h+=.5
-		if b.h > bspawn.maxh then
-			b.h = bspawn.maxh
+		if b.h > b.maxh then
+			b.h = b.maxh
 		end
 	elseif change == 8 then
 		b.h-=.5
-		if b.h < bspawn.minh then
-			b.h = bspawn.minh
+		if b.h < b.minh then
+			b.h = b.minh
 		end
 	end
 	--resize
@@ -483,7 +518,7 @@ function igame()
 	
 	game.state = 'play'
 	game.level = 1
-	game.tlvls = 4
+	game.tlvls = 5
 	game.walls = 16
 	game.ceil = 8
 	game.ceilc = 6
@@ -684,6 +719,10 @@ end
 -- end state --
 ---------------
 
+function iend()
+	_init()
+end
+
 function uend()
 	uwin()
 end
@@ -751,11 +790,12 @@ end
 function ilevel()
 	level = {}
 	
-	level[1] = '//c8w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'
+	level[1] = '//c8h2w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'
 	level[2] = '/----b4/---b5/--b6/-b7/-b7/-b7'
 	level[3] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
 	level[4] = 'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
-	level[5] = 'b'--'h2/b8/b7/b6/b5/b4/b3/b2/b1'
+	level[5] = '/c8w5h3mxh1mxw1b8/b8/b8/b8/mnh5mnw5mxh7mxw7b8/b8'
+	level[6] = 'b'--'h2/b8/b7/b6/b5/b4/b3/b2/b1'
 
 end
 
@@ -763,10 +803,9 @@ function iload(lvl)
 	game.timer=0
 	game.state='load'
 	banner.notif='level '..game.level
-	ibrick()
+ ibrick()
 	ipaddle()
 	rball()
-	gen_bricks(level[lvl])
 	sfx(4,3)
 	music(0,5000)
 	
@@ -779,8 +818,8 @@ function iload(lvl)
 	elseif game.level == 1 then
 		bspawn.minw=3
 		bspawn.minh=2
-		bspawn.maxw=6
-		bspawn.maxh=4
+		bspawn.maxw=5
+		bspawn.maxh=3
 		
 		player.lives=3
 		
@@ -809,9 +848,19 @@ function iload(lvl)
 		
 		player.lives+=2
 		
+	elseif game.level==5 then
+		bspawn.minw=1
+		bspawn.minh=1
+		bspawn.maxw=3
+		bspawn.maxh=2
+		
+		player.lives+=2
+		
 	else
 		iend()
 	end
+	
+	gen_bricks(level[lvl])
 		
 end
 -->8
