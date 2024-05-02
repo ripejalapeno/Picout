@@ -44,7 +44,6 @@ function _draw()
 	elseif game.state=='end' then
 		dend()
 	end
-	--print(bricks[1].minh)
 end
 -->8
 -- paddle --
@@ -307,6 +306,7 @@ function ibrick()
 	brick.minh=0
 	brick.maxw=0
 	brick.maxh=0
+	brick.chg_rt=100
 	
 	bspawn.x+=brick.w
 	bspawn.y+=brick.h
@@ -354,6 +354,7 @@ function gen_bricks(pat)
 			b.maxw=brick.maxw
 			b.maxh=brick.maxh
 			b.col=brick.col
+			b.chg_rt=brick.chg_rt
 			add(bricks,b)
 			brick.x+=(brick.w*2)+2
 			
@@ -408,6 +409,7 @@ function gen_bricks(pat)
 				b.minh=brick.minh
 				b.maxw=brick.maxw
 				b.maxh=brick.maxh
+				b.chg_rt=brick.chg_rt
 				b.col=brick.col
 				add(bricks,b)
 				brick.x+=(brick.w*2)+2
@@ -462,7 +464,13 @@ end
 function shift_brick(b)
 	--shift
 		--up down left right
-	if ceil(rnd(45))!=45 then
+	if ball.state=='sticky' then
+		return
+	end
+	if #bricks < b.chg_rt then
+		b.chg_rt=#bricks
+	end
+	if ceil(rnd(b.chg_rt))!=b.chg_rt then
 		return
 	end
 	
@@ -681,19 +689,21 @@ function uwin()
 	upaddle()
 	uwind()
 	
-	if game.timer%(75-(game.level*10))==1 then
+	
+	if game.timer%(75-(game.level*9))==1 then
 		ifwork()
 		sfx(31)
 	end
 	
-	if game.timer%(200-(game.level*15))==1 then
+	if game.timer%(200-(game.level*14))==1 then
 		local x = rnd(120)+4
 		local y = rnd(120)+4
 		local c = 7+ceil(rnd(5))
 		local mag = 50+(game.level*20)
+		local vel = 3+(game.level*.25)
 		
-		ifwork(x,y,c,mag)
-		ifwork(x,y,c+1,mag/2)
+		ifwork(x,y,c,mag,vel)
+		ifwork(x,y,c+1,mag/1.5,vel/2)
 		
 		sfx(33)
 	end
@@ -870,6 +880,8 @@ function iparts()
 	
 	parts = {}
 	fworks = {}
+	sm_fwork = 30
+	lg_fwork = 45
 	
 	gravity = .03
 	wind = .05
@@ -975,7 +987,7 @@ end
 ---------------
 
 -- init firework
-function ifwork(genx,geny,col,mag)
+function ifwork(genx,geny,col,mag,vel)
 	if genx==nil then
 		genx=rnd(128-(game.walls*2))+game.walls
 	end
@@ -988,13 +1000,16 @@ function ifwork(genx,geny,col,mag)
 	if mag==nil then
 		mag=25
 	end
+	if vel==nil then
+		vel = 3
+	end
 	local size=rnd(5)
 	for i=0,mag+rnd(40) do
 		add(fworks,{
 			x=genx+(rnd(size)-(size/2)),
 			y=geny+(rnd(size)-(size/2)),
-			dx=rnd(3)-1.5,
-			dy=rnd(3)-1.5,
+			dx=rnd(vel)-(vel/2),
+			dy=rnd(vel)-(vel/2),
 			l=rnd(100),
 			c=col
 		})
