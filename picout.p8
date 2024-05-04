@@ -10,6 +10,7 @@ function _init()
 	ibrick()
 	iparts()
 	imenu()
+	debug=nil
 end
 
 function _update60()
@@ -43,6 +44,9 @@ function _draw()
 		dload()
 	elseif game.state=='end' then
 		dend()
+	end
+	if debug!=nil then
+		print(debug)
 	end
 end
 -->8
@@ -166,12 +170,15 @@ function uball()
 		
 	-- ball falls --
 	elseif new_y+ball.r>=127 then
-		player.lives-=1
 		sfx(3)
 		b_streak=0
-		game.walls+=1
-		ifwork(8+(player.lives*8),5,8,75)
-		--spr(0,(i*8))
+		
+		if game.walls<game.mwalls then
+			game.walls+=1
+		end
+		ifwork(hearts[#hearts].x,hearts[#hearts].y,8,75)
+		deli(hearts,#hearts)
+		player.lives-=1
 		rball()
 	end
 	
@@ -462,8 +469,6 @@ function dbricks()
 end
 
 function shift_brick(b)
-	--shift
-		--up down left right
 	if ball.state=='sticky' then
 		return
 	end
@@ -477,21 +482,12 @@ function shift_brick(b)
 	change = ceil(rnd(8))
 	if change == 1 and btn(➡️) then
 		b.x+=1
-		if b.x+b.w > 126 - game.walls then
-			b.x = 126 - game.walls - b.w
-		end
 	elseif change == 2 and btn(⬅️) then
 		b.x-=1
-		if b.x-b.w < game.walls-1 then
-			b.x = 1+game.walls+b.w
-		end
 	elseif change == 3 and ball.dy>0 then
 		b.y+=1
 	elseif change == 4 and ball.dy<0 then
 		b.y-=1
-		if b.y-b.h < game.ceil then
-			b.y = game.ceil + b.h
-		end
 	elseif change == 5 then
 		b.w+=.5
 		if b.w > b.maxw then
@@ -513,6 +509,16 @@ function shift_brick(b)
 			b.h = b.minh
 		end
 	end
+	
+	if b.x-b.w < game.walls+1 then
+		b.x = 1+game.walls+b.w
+	elseif b.x+b.w > 126 - game.walls then
+		b.x = 126 - game.walls - b.w
+	end
+	
+	if b.y-b.h < game.ceil+1 then
+		b.y = game.ceil + b.h +1
+	end
 	--resize
 		--grow shrink
 	
@@ -528,6 +534,7 @@ function igame()
 	game.level = 1
 	game.tlvls = 5
 	game.walls = 16
+	game.mwalls = 24
 	game.ceil = 8
 	game.ceilc = 6
 	game.timer = 0
@@ -600,6 +607,7 @@ function uplay()
 	ubricks()
 	uparts()
 	ufworks()
+	ubanner()
 end
 
 -- draw play state
@@ -611,7 +619,8 @@ function dplay()
 	dpaddle()
 	dball()
 	dbricks()
-	dlives()
+	--dlives()
+	dhearts()
 	dfworks()
 end
 
@@ -647,6 +656,7 @@ end
 function uload()
 	uparts()
 	ufworks()
+	ubanner()
 end
 
 function dload()
@@ -703,7 +713,7 @@ function uwin()
 		local vel = 3+(game.level*.25)
 		
 		ifwork(x,y,c,mag,vel)
-		ifwork(x,y,c+1,mag/1.5,vel/2)
+		ifwork(x,y,c+1,mag/2,vel/1.5)
 		
 		sfx(33)
 	end
@@ -870,6 +880,7 @@ function iload(lvl)
 		iend()
 	end
 	
+	ihearts()
 	gen_bricks(level[lvl])
 		
 end
@@ -1065,31 +1076,78 @@ function ibanner()
 	banner.r = banner.l
 	banner.notif = 'level '..game.level
 
+	hearts = {}
+	
 end
 
+-- update banner
 function ubanner()
-	if banner.notif==nil then
+	if #hearts<=0 then
 		return
+	end
+	if hearts[#hearts].x+9 > banner.x - banner.w then
+		banner.x=9+hearts[#hearts].x+banner.w
 	end
 end
 
 function dbanner()
-	if banner.notif==nil then
-		return
-	end
 	rectfill(banner.x-banner.w,banner.y-banner.h,banner.x+banner.w,banner.y+banner.h,banner.bgc)
 	print(banner.notif,banner.x-banner.w+2,banner.y-2,banner.textc)
 end
+
+-- hearts --
+------------
+
+function ihearts()
+
+	heart = {}
+	
+	heart.x = 0
+	heart.y = 0
+	heart.spr = 0
+	
+	for i=1, player.lives do
+		
+		h={}
+		
+		h.x=heart.x
+		h.y=heart.y
+		h.spr=heart.spr
+		
+		heart.x+=8
+		
+		add(hearts,h)
+	end
+	
+end
+
+function uhearts()
+	
+end
+
+function dhearts()
+	for h in all(hearts) do
+		spr(h.spr,h.x,h.y)
+	end
+end
+
+
 -->8
 -- to do --
 
 --[[
 	
-	1 - sliding banner
+	1 - angle control
+	2 - animated hearts
+						-hearts spin and jump in
+							wavelike motion when level
+							starts, and when life is
+							lost
+	3 - sliding banner
 					-banner slides down to
 						center between levels
-						for you win, you lose,
-	4 - angle control
+						for you win, you lose, etc
+	4 - screen shake
 	
 	ideas
 	
@@ -1134,12 +1192,12 @@ credits = {
 	 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00880880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-08888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-08888888000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00888880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00088800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00880880000888000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+08888888008888800008880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+08888888008888800008880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00888880000888000008880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00088800000888000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00008000000080000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 4801000024510275202b530305403554038550335402e52029510235101d51019510135100f5100c5100851006510045100150000500005000050000400000000000000000000000000000000000000000000000
 00010000270302503027030280202a0102c0102e0502f0501c6000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
