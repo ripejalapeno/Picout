@@ -57,9 +57,12 @@ function ipaddle()
 
 	pdl = {
 		col=7,
-		spd=2,
+		acc=.5,
+		max_spd=3,
+		friction=0.25,
 		x=63,
 		y=115,
+		dx=0,
 		w=9,
 		h=1
 		}
@@ -73,25 +76,43 @@ function upaddle()
  -- player controls --
 
  if btn(➡️) then
- 	pdl.x += pdl.spd
- 	
- 	-- right wall bounds --
- 	if pdl.x + pdl.w + 1 >= 
- 				127 - game.walls then
- 				
- 		pdl.x = 126 - pdl.w - game.walls
+ 	pdl.dx+=pdl.acc
+ 	if pdl.dx>pdl.max_spd then
+ 		pdl.dx=pdl.max_spd
  	end
  end
- 
+
  if btn(⬅️) then
- 	pdl.x -= pdl.spd
- 	
- 	-- left wall bounds --
- 	if pdl.x - pdl.w - 1 <=
- 				game.walls then
- 		pdl.x = 1 + pdl.w + game.walls
- 	end	
+ 	pdl.dx-=pdl.acc
+ 	if pdl.dx< -pdl.max_spd then
+ 		pdl.dx= -pdl.max_spd
+ 	end
  end
+ 	
+	if pdl.dx>0 then
+		pdl.dx-=pdl.friction
+	elseif pdl.dx<0 then
+		pdl.dx+=pdl.friction
+	end
+
+ pdl.x+=pdl.dx
+ 
+ -- right wall bounds --
+	if pdl.x + pdl.w + 1 >= 
+				127 - game.walls then
+				
+		pdl.dx=0
+		pdl.x = 126 - pdl.w - game.walls
+	end
+ 	
+ -- left wall bounds --
+	if pdl.x - pdl.w - 1 <=
+				game.walls then
+		pdl.dx=0
+		pdl.x = 1 + pdl.w + game.walls
+	end	
+ 
+ 
 end
 
 -- draw paddle --
@@ -120,6 +141,7 @@ function iball()
 	ball.dx=1
 	ball.dy=-1
 	ball.r=2
+	ball.ang=1
 		
 end
 
@@ -188,6 +210,18 @@ function uball()
 			ball.dx *= -1
 		else
 			ball.dy *= -1
+			if ball.y>pdl.y then
+				new_y=pdl.y+pdl.h+ball.r
+			else
+				new_y=pdl.y-pdl.h-ball.r
+				if abs(pdl.dx)>2 then
+					if sign(pdl.dx)==sign(ball.dx) then
+						setang(mid(0,ball.ang-1,2))
+					else
+						setang(mid(0,ball.ang+1,2))
+					end
+				end
+			end
 		end
 		sfx(2)
 		b_streak=0
@@ -292,6 +326,30 @@ function ball_deflx(bx,by,bdx,bdy,tx,ty,tw,th)
 		end
 	end
 	return false
+end
+
+function setang(ang)
+	ball.ang=ang
+	if ang==2 then
+		ball.dx=0.50*sign(ball.dx)
+		ball.dy=1.30*sign(ball.dy)
+	elseif ang==0 then
+		ball.dx=1.30*sign(ball.dx)
+		ball.dy=0.50*sign(ball.dy)
+	else
+		ball.dx=1*sign(ball.dx)
+		ball.dy=1*sign(ball.dy)
+	end
+end
+
+function sign(n)
+ if n<0 then
+  return -1
+ elseif n>0 then
+  return 1
+ else
+  return 0
+ end
 end
 
 
@@ -1148,6 +1206,13 @@ end
 						center between levels
 						for you win, you lose, etc
 	4 - screen shake
+						-when player loses a heart
+							more intense shake when
+							player is down to their
+							last heart
+							
+						-small shake when a big
+							firework blast goes
 	
 	ideas
 	
