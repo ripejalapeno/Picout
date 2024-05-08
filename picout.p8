@@ -11,6 +11,7 @@ function _init()
 	iparts()
 	imenu()
 	debug=nil
+	camera(0,0)
 end
 
 function _update60()
@@ -45,9 +46,11 @@ function _draw()
 	elseif game.state=='end' then
 		dend()
 	end
+	
 	if debug!=nil then
 		print(debug)
 	end
+	
 end
 -->8
 -- paddle --
@@ -203,6 +206,10 @@ function uball()
 		ifwork(hearts[#hearts].x,hearts[#hearts].y,8,75)
 		deli(hearts,#hearts)
 		player.lives-=1
+		shake+=.20
+		if player.lives==1 then
+			shake+=.3
+		end
 		rball()
 	end
 	
@@ -603,12 +610,16 @@ function igame()
 	
 	player = {}
 	
-	player.lives = 1
+	player.lives = 5
+	player.lost = 0
+	hurt=10
 	
 	parts = {}
 	
 	gravity = .03
 	wind = .05
+	shake = 0
+	shake_lvl = 32
 	
 	pal(4,5+128,1)
 	
@@ -664,6 +675,7 @@ end
 -- update play state
 function uplay()
 	upaddle()
+	screen_shake()
 	uball()
 	ubricks()
 	uparts()
@@ -689,6 +701,12 @@ function dplay()
 	--dlives()
 	dhearts()
 	dfworks()
+	--[[if player.hurt>0 then
+		fillp(░)
+		rectfill(0,game.ceil+1,128,128,5)
+		fillp()
+		player.hurt-=1
+	end]]
 end
 
 -- menu state --
@@ -765,6 +783,7 @@ function uwin()
 	ufworks()
 	upaddle()
 	uwind()
+	screen_shake()
 	
 	
 	if game.timer%(75-(game.level*9))==1 then
@@ -782,6 +801,7 @@ function uwin()
 		ifwork(x,y,c,mag,vel)
 		ifwork(x,y,c+1,mag/2,vel/1.5)
 		
+		shake+=.09
 		sfx(33)
 	end
 		
@@ -832,6 +852,7 @@ function ilose()
 	music(-1)
 	sfx(5)
 	change_bnr('you lose!')
+	center_bnr()
 	game.timer=0
 end
 
@@ -840,6 +861,7 @@ function ulose()
 	uparts()
 	ufworks()
 	uball()
+	screen_shake()
 	
 	if game.timer==150 then
 		change_bnr('press ❎')
@@ -864,13 +886,24 @@ function dbounds()
 	rectfill(0,0,127,game.ceil,game.ceilc)
 end
 
-function dlives()
-	for i=1,player.lives do
-		spr(0,(i*8))
+
+
+function screen_shake()
+	local shakex = (shake_lvl/2) - rnd(shake_lvl)
+	local shakey = (shake_lvl/2) - rnd(shake_lvl)
+	
+	shakex=shakex*shake
+	shakey=shakey*shake
+	
+	camera(shakex,shakey)
+	
+	shake*=0.95
+	
+	if shake<0.05 then
+		shake=0
 	end
+	
 end
-
-
 -->8
 -- levels --
 
@@ -1262,6 +1295,10 @@ end
 					
 					paddle width loses a pixel
 					 each level
+					 
+	2 - bg clouds
+						that float calmly in the
+						background
 							
 	3 - sliding banner
 					-banner slides down to
@@ -1273,6 +1310,10 @@ end
 							more intense shake when
 							player is down to their
 							last heart
+							
+							also print stippling gray
+							across the play area for
+							a moment
 							
 						-small shake when a big
 							firework blast goes
