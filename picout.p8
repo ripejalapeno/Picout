@@ -57,9 +57,9 @@ function ipaddle()
 
 	pdl = {
 		col=7,
-		acc=.5,
+		acc=.25,
 		max_spd=3,
-		friction=0.25,
+		friction=0.15,
 		x=63,
 		y=115,
 		dx=0,
@@ -88,8 +88,10 @@ function upaddle()
  		pdl.dx= -pdl.max_spd
  	end
  end
- 	
-	if pdl.dx>0 then
+ 
+	if abs(pdl.dx) < pdl.friction then
+		pdl.dx=0
+	elseif pdl.dx>0 then
 		pdl.dx-=pdl.friction
 	elseif pdl.dx<0 then
 		pdl.dx+=pdl.friction
@@ -101,14 +103,14 @@ function upaddle()
 	if pdl.x + pdl.w + 1 >= 
 				127 - game.walls then
 				
-		pdl.dx=0
+		pdl.dx*=-1
 		pdl.x = 126 - pdl.w - game.walls
 	end
  	
  -- left wall bounds --
 	if pdl.x - pdl.w - 1 <=
 				game.walls then
-		pdl.dx=0
+		pdl.dx*=-1
 		pdl.x = 1 + pdl.w + game.walls
 	end	
  
@@ -592,6 +594,7 @@ function igame()
 	game.level = 1
 	game.tlvls = 5
 	game.walls = 16
+	game.spwalls = 16
 	game.mwalls = 24
 	game.ceil = 8
 	game.ceilc = 6
@@ -666,6 +669,12 @@ function uplay()
 	uparts()
 	ufworks()
 	ubanner()
+	uhearts()
+	if game.timer > 15 then
+		banner.bgc = 4
+		banner.textc = 7
+	end
+	game.timer+=1
 end
 
 -- draw play state
@@ -687,15 +696,14 @@ end
 
 function imenu()
 	game.state='menu'
-	banner.notif='picout-8'
+	change_bnr('press ❎ to start')
+	center_bnr()
 	game.timer=0
 	gen_bricks(level[1])
 end
 
 function umenu()
-	if game.timer==60 then
-		banner.notif='press ❎'
-	end
+	ubanner()
 	game.timer+=1
 end
 
@@ -741,7 +749,8 @@ function iwin(lvl)
 	ifwork(ball.x,ball.y,ball.col-1)
 	
 	game.timer=0
-	banner.notif='you win!'
+	change_bnr('you win!')
+	center_bnr()
 	game.state='win'
 	
 	if lvl == game.tlvls then
@@ -778,7 +787,7 @@ function uwin()
 		
 	
 	if game.timer==300 then
-		banner.notif='press ❎'
+		change_bnr('press ❎')
 	end
 	
 	game.timer+=1
@@ -822,7 +831,7 @@ function ilose()
 	game.state='lose'
 	music(-1)
 	sfx(5)
-	banner.notif='you lose!'
+	change_bnr('you lose!')
 	game.timer=0
 end
 
@@ -833,7 +842,7 @@ function ulose()
 	uball()
 	
 	if game.timer==150 then
-		banner.notif='press ❎'
+		change_bnr('press ❎')
 	end
 	game.timer+=1
 end
@@ -880,7 +889,12 @@ end
 function iload(lvl)
 	game.timer=0
 	game.state='load'
-	banner.notif='level '..game.level
+	change_bnr('level '..game.level)
+ banner.x=95
+ banner.y=1
+ banner.bgc=7
+ banner.textc=5
+ game.walls=game.spwalls
  ibrick()
 	ipaddle()
 	rball()
@@ -1124,10 +1138,10 @@ end
 function ibanner()
 	banner = {}
 	
-	banner.x = 63.5
-	banner.y = 4
+	banner.x = 18
+	banner.y = 68
 	banner.w = 17
-	banner.h = 3
+	banner.h = 6
 	banner.bgc = 4
 	banner.textc = 7
 	banner.l = banner.x+banner.w
@@ -1140,17 +1154,26 @@ end
 
 -- update banner
 function ubanner()
-	if #hearts<=0 then
-		return
-	end
-	if hearts[#hearts].x+9 > banner.x - banner.w then
-		banner.x=9+hearts[#hearts].x+banner.w
+	
+end
+
+function change_bnr(text)
+	banner.notif=text
+	banner.w=#banner.notif*4
+	for c in all(text) do
+		if c == '❎' then
+			banner.w+=4
+		end
 	end
 end
 
+function center_bnr()
+	banner.x=(128-banner.w)/2
+end
+
 function dbanner()
-	rectfill(banner.x-banner.w,banner.y-banner.h,banner.x+banner.w,banner.y+banner.h,banner.bgc)
-	print(banner.notif,banner.x-banner.w+2,banner.y-2,banner.textc)
+	rectfill(banner.x,banner.y,banner.x+banner.w,banner.y+banner.h,banner.bgc)
+	print(banner.notif,banner.x+1,banner.y+1,banner.textc)
 end
 
 -- hearts --
@@ -1162,7 +1185,16 @@ function ihearts()
 	
 	heart.x = 0
 	heart.y = 0
-	heart.spr = 0
+	heart.spr = 3
+	
+	-- animation timer
+	heart.anim_t = 15
+	-- animation stage
+	heart.anim_stg = 0
+	
+	for h in all(hearts) do
+		del(hearts,h)
+	end
 	
 	for i=1, player.lives do
 		
@@ -1171,8 +1203,11 @@ function ihearts()
 		h.x=heart.x
 		h.y=heart.y
 		h.spr=heart.spr
+		h.anim_t=heart.anim_t
+		h.anim_stg=heart.anim_stg
 		
 		heart.x+=8
+		heart.anim_t+=5
 		
 		add(hearts,h)
 	end
@@ -1180,6 +1215,33 @@ function ihearts()
 end
 
 function uhearts()
+	
+	for h in all(hearts) do
+		h.anim_t-=1
+		h.anim_t-=b_streak/5
+		if h.anim_t<=0 then
+			local stage = h.anim_stg
+			if stage==0 then
+				h.spr-=1
+				if h.spr==0 then
+					h.anim_stg=1
+					h.anim_t+=25
+					h.y+=1
+				else
+					h.anim_t+=15
+				end
+			elseif stage==1 then
+				h.spr+=1
+				if h.spr==2 then
+					h.anim_stg=0
+					h.anim_t+=10
+					h.y-=1
+				else
+					h.anim_t+=15
+				end
+			end
+		end
+	end
 	
 end
 
@@ -1200,12 +1262,6 @@ end
 					
 					paddle width loses a pixel
 					 each level
-					
-	2 - animated hearts
-						-hearts spin and jump in
-							wavelike motion when level
-							starts, and when life is
-							lost
 							
 	3 - sliding banner
 					-banner slides down to
@@ -1264,19 +1320,19 @@ credits = {
 	 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-008808800008880000008000066cccccccccccccccccc66000000000000000000000000000000000000000000000000000000000000000000000000000000000
-088888880088888000088800d6000000000000000000006d00000000000000000000000000000000000000000000000000000000000000000000000000000000
-088888880088888000088800dd66660000000000006666dd00000000000000000000000000000000000000000000000000000000000000000000000000000000
-0088888000088800000888000ddd6666666666666666ddd000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000888000008880000008000000dddddddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00880880000888000000800000000000066cccccccccccccccccc660000000000000000000000000000000000000000000000000000000000000000000000000
+08888888008888800008880000000000d6000000000000000000006d000000000000000000000000000000000000000000000000000000000000000000000000
+08888888008888800008880000000000dd66660000000000006666dd000000000000000000000000000000000000000000000000000000000000000000000000
+008888800008880000088800000000000ddd6666666666666666ddd0000000000000000000000000000000000000000000000000000000000000000000000000
+00088800000888000000800000000000000dddddddddddddddddd000000000000000000000000000000000000000000000000000000000000000000000000000
 00008000000080000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000cccccccccccccccc000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000cccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000ccccccccccc00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000ccccccccccc000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000cccc000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000cccc0000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 4801000024510275202b530305403554038550335402e52029510235101d51019510135100f5100c5100851006510045100150000500005000050000400000000000000000000000000000000000000000000000
 00010000270302503027030280202a0102c0102e0502f0501c6000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
