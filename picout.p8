@@ -46,9 +46,9 @@ function _draw()
 	elseif game.state=='end' then
 		dend()
 	end
-	
+
 	if debug!=nil then
-		print(debug)
+		print(debug,0,0)
 	end
 	
 end
@@ -71,6 +71,7 @@ function ipaddle()
 		state='normal',
 		effect=0
 		}
+		
 		
 		
 end
@@ -135,7 +136,11 @@ function pdl_state(state)
  	pdl.col=7
  	pdl.effect+=10
  elseif state == 'normal' then
- 	pdl.col=12
+ 	if player.lives<=1 then
+ 		pdl.col=9
+ 	else
+ 		pdl.col=12
+ 	end
  end
 end
 
@@ -200,7 +205,7 @@ function uball()
 	end
 	
 	local new_x=ball.x+ball.dx
-	local new_y=ball.y+ball.dy
+	local new_y=ball.y+ball.dy+pull.power
 	
 	-- bounce walls --
 	if new_x+ball.r >= 127-game.walls then
@@ -647,6 +652,7 @@ function igame()
 	shake_lvl = 32
 	
 	pal(4,5+128,1)
+	pal(3,1+128,1)
 	
 end
 
@@ -674,8 +680,8 @@ function ugame()
 		end
 	elseif game.state=='lose' then
 		if btnp(❎) then
+			player.lives=1
 			iload(game.level)
-			player.lives=3
 		elseif btnp(🅾️) then
 			_init()
 		end
@@ -699,6 +705,8 @@ end
 
 -- update play state
 function uplay()
+	uwind()
+	uclouds()
 	upaddle()
 	screen_shake()
 	uball()
@@ -716,7 +724,7 @@ end
 
 -- draw play state
 function dplay()
-	uwind()
+	dclouds()
 	dparts()
 	dbounds()
 	dbanner()
@@ -747,11 +755,13 @@ end
 
 function umenu()
 	ubanner()
+	uclouds()
 	screen_shake()
 	game.timer+=1
 end
 
 function dmenu()
+	dclouds()
 	dbounds()
 	dbanner()
 	dbricks()
@@ -764,6 +774,7 @@ end
 --	>>>
 
 function uload()
+	uclouds()
 	uparts()
 	ufworks()
 	ubanner()
@@ -806,6 +817,7 @@ end
 
 --update win state
 function uwin()
+	uclouds()
 	uparts()
 	ufworks()
 	upaddle()
@@ -843,6 +855,7 @@ end
 
 -- draw win state
 function dwin()
+	dclouds()
 	dparts()
 	dbounds()
 	dbanner()
@@ -885,6 +898,7 @@ end
 
 -- update lose
 function ulose()
+	uclouds()
 	uparts()
 	ufworks()
 	uball()
@@ -906,8 +920,8 @@ end
 function dbounds()
 
 	-- walls --
-	rectfill(0,0,game.walls,127,5)
-	rectfill(127-game.walls,0,127,127,5)
+	rectfill(-shake_lvl,-shake_lvl,game.walls,127+shake_lvl,5)
+	rectfill(127-game.walls,-shake_lvl,127+shake_lvl,127+shake_lvl,5)
 	
 	-- ceiling --
 	rectfill(0,0,127,game.ceil,game.ceilc)
@@ -1023,6 +1037,9 @@ function iparts()
 	
 	parts = {}
 	fworks = {}
+	bg_clouds = {}
+	mg_clouds = {}
+	fg_clouds = {}
 	sm_fwork = 30
 	lg_fwork = 45
 	
@@ -1032,6 +1049,7 @@ function iparts()
 end
 
 function uparts()
+	
 	for p in all(parts) do
 		p.l-=1
 		if p.l < 0 then
@@ -1077,6 +1095,83 @@ function uparts()
 	end
 end
 
+function uclouds()
+
+	if #bg_clouds<7 then
+		add(bg_clouds,{
+			x=rnd(64)-128,
+			y=rnd(64),
+			dx=rnd(1)+.5,
+			w=rnd(30)+20,
+			h=rnd(5)+4,
+			col=3
+		})
+	end
+	
+	if #mg_clouds<8 then
+		add(mg_clouds,{
+			x=rnd(64)-128,
+			y=rnd(64)+32,
+			dx=rnd(1)+.5,
+			w=rnd(25)+15,
+			h=rnd(4)+3,
+			col=1
+		})
+	end
+	
+	if #fg_clouds<10 then
+		add(fg_clouds,{
+			x=rnd(64)-128,
+			y=rnd(64)+64,
+			dx=rnd(2)+1,
+			w=rnd(25)+15,
+			h=rnd(3)+2,
+			col=2
+		})
+	end
+	
+	for c in all(bg_clouds) do
+		if c.x-c.w>128-game.walls then
+			del(bg_clouds,c)
+		else
+			c.x+=c.dx+wind
+		end
+	end
+	
+	for c in all(mg_clouds) do
+		if c.x-c.w>128-game.walls then
+			del(mg_clouds,c)
+		else
+			c.x+=c.dx+wind
+		end
+	end
+	
+	for c in all(fg_clouds) do
+		if c.x-c.w>128-game.walls then
+			del(fg_clouds,c)
+		else
+			c.x+=c.dx+wind
+		end
+	end
+
+end
+
+function dclouds()
+
+	for c in all(bg_clouds) do
+		rectfill(c.x-c.w,c.y-c.h,c.x+c.w,c.y+c.h,c.col)
+	end
+	
+	for c in all(mg_clouds) do
+		rectfill(c.x-c.w,c.y-c.h,c.x+c.w,c.y+c.h,c.col)
+	end
+	
+	for c in all(fg_clouds) do
+		rectfill(c.x-c.w,c.y-c.h,c.x+c.w,c.y+c.h,c.col)
+	end
+	
+end
+
 function uwind()
 	if btn(➡️) then
 		wind += 0.02
@@ -1090,12 +1185,17 @@ function uwind()
 		wind += 0.005
 	end
 	wind = mid(-1,wind,1)
+	if abs(wind)<0.005 then
+		wind=0
+	end
 end
 
 function dparts()
-	for i=1,#parts do
-		pset(parts[i].x,parts[i].y,parts[i].c)
+
+	for p in all(parts) do
+		pset(p.x,p.y,p.c)
 	end
+	
 end
 
 function brick_parts(bx,by,bw,bh)
