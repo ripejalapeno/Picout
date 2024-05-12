@@ -55,7 +55,6 @@ function _draw()
 	fillp()]]
 	
 	
-	
 	if debug!=nil then
 		print(debug,0,0)
 	end
@@ -71,6 +70,7 @@ function ipaddle()
 
 	pdl = {
 		col=12,
+		sprite=20,
 		acc=.30,
 		max_spd=3.5,
 		friction=0.05,
@@ -84,7 +84,7 @@ function ipaddle()
 		effect=0
 		}
 		
-	pull = {
+	mag = {
 		active=true,
 		power=0,
 		acc=0.05,
@@ -128,26 +128,26 @@ function upaddle()
  	end
  end
  
- if pull.power>0 then
- 	pull.power-=pull.decay
- elseif pull.power<0 then
- 	pull.power+=pull.decay
+ if mag.power>0 then
+ 	mag.power-=mag.decay
+ elseif mag.power<0 then
+ 	mag.power+=mag.decay
  end
  
- if abs(pull.power)<pull.decay then
- 	pull.power=0
+ if abs(mag.power)<mag.decay then
+ 	mag.power=0
  end
  
- if btn(🅾️) and pull.active==true then
- 	pull.power+=pull.acc
+ if btn(🅾️) and mag.active==true then
+ 	mag.power+=mag.acc
  	
  	--loop magnet sfx
  	if game.timer%45==1 then
  		sfx(34)
  	end
  	
- 	if pull.power>pull.max_pwr then
- 		pull.power=pull.max_pwr
+ 	if mag.power>mag.max_pwr then
+ 		mag.power=mag.max_pwr
  	end
  end
  
@@ -224,7 +224,18 @@ function dpaddle()
 		pdl.y+pdl.h,
 		pdl.col
 		)]]
-		spr(4,pdl.x-pdl.w,pdl.y,3,1)
+		if game.diff=='easy' then
+			spr(20,pdl.x-pdl.w,pdl.y,4,1)
+			line(pdl.x-pdl.w+4,pdl.y-pdl.h+2,
+						pdl.x+pdl.w-4,pdl.y-pdl.h+2,
+						pdl.col)
+		
+		elseif game.diff=='hard' then
+			spr(4,pdl.x-pdl.w,pdl.y,3,1)
+		else
+		
+		end
+		
 		line(pdl.x-pdl.w+3,pdl.y-pdl.h+1,
 							pdl.x+pdl.w-3,pdl.y-pdl.h+1,
 							pdl.col)
@@ -245,6 +256,7 @@ function iball()
 	ball.dy=-1
 	ball.r=2
 	ball.ang=1
+	ball.mag=mag.power*(mag.power-(mag.decay*8))^abs(pdl.x-ball.x)
 		
 end
 
@@ -258,9 +270,10 @@ end
 
 function uball()
 
+	ball.mag=mag.power*(mag.power-(mag.decay*8))^abs(pdl.x-ball.x)
 	--hold ball
 	if ball.state == 'sticky' then
-		pull.power=0
+		mag.power=0
 		if btnp(❎) then
 			ball.state = 'go'
 		else
@@ -280,7 +293,7 @@ function uball()
 	
 	--if ball.x>pdl.x-pdl.w and ball.x<pdl.x+pdl.w then
 		
-		new_y+=pull.power*(pull.power-(pull.decay*8))^abs(pdl.x-ball.x)
+		new_y+=ball.mag
 	--end
 	
 	-- bounce walls --
@@ -489,6 +502,8 @@ function ibrick()
 	brick.maxh=0
 	brick.chg_rt=100
 	
+	
+	
 	bspawn.x+=brick.w
 	bspawn.y+=brick.h
 	brick.x=bspawn.x
@@ -622,8 +637,20 @@ function ubricks()
 				b_sfx=28
 			elseif b_streak<=13 then
 				b_sfx=29
-			elseif b_streak<=15 then
+			elseif b_streak>=15 then
 				b_sfx=30
+				if b_streak%5==0 then
+					local x = b.x
+					local y = b.y
+					local c = b.col
+					local mag = 50+(game.level*20)
+					local vel = 3+(game.level*.25)
+					ifwork(x,y,c,mag,vel)
+					ifwork(x,y,c+1,mag/2,vel/1.5)
+					
+					shake+=.09
+					sfx(33)
+				end
 			end
 			sfx(b_sfx)
 			brick_parts(b.x,b.y,b.w,b.h)
@@ -715,6 +742,9 @@ function igame()
 	game.timer = 0
 	game.display = false
 	
+	--difficulty
+	game.diff = 'easy'
+	
 	player = {}
 	
 	player.lives = 5
@@ -730,7 +760,7 @@ function igame()
 	
 	pal(4,5+128,1)
 	pal(3,1+128,1)
-	pal(13,1+128,1)
+	pal(13,3+128,1)
 	pal(14,12+128,1)
 	pal(15,6+128,1)
 	
@@ -1055,7 +1085,7 @@ function iload(lvl)
 	ipaddle()
 	rball()
 	sfx(4,3)
-	music(1,5000,2)
+	music(0,5000,2)
 	
 	if game.level == 0 then
 		bspawn.minw=3
@@ -1064,6 +1094,7 @@ function iload(lvl)
 		bspawn.maxh=3
 	
 	elseif game.level == 1 then
+		
 		bspawn.minw=3
 		bspawn.minh=2
 		bspawn.maxw=5
@@ -1073,6 +1104,9 @@ function iload(lvl)
 		player.lives=3
 		
 	elseif game.level == 2 then
+	
+		
+		
 		bspawn.minw=2
 		bspawn.minh=2
 		bspawn.maxw=5
@@ -1109,6 +1143,17 @@ function iload(lvl)
 		iend()
 	end
 	
+	if game.diff=='easy' then
+			pdl.w=15.5
+			pdl.spr=20
+			pdl.max_spd=4
+		elseif game.diff=='hard' then
+			pdl.w=11.5
+			pdl.spr=4
+			pdl.max_spd=3.5
+		end
+
+	
 	ihearts()
 	gen_bricks(level[lvl])
 		
@@ -1142,6 +1187,7 @@ function iparts()
 	
 end
 
+-- update general particles
 function uparts()
 	
 	for p in all(parts) do
@@ -1151,17 +1197,17 @@ function uparts()
 		else
 			
 			if p.col==7 then
-				p.c = 7
+				p.col = 7
 			elseif p.l > 200 then
-				p.c = 11
+				p.col = 11
 			elseif p.l > 125 then
-				p.c = 12
+				p.col = 12
 			elseif p.l > 100 then
-				p.c = 10
+				p.col = 10
 			elseif p.l > 50 then
-				p.c = 9
+				p.col = 9
 			elseif p.l > 25 then
-				p.c = 8 
+				p.col = 8 
 			end
 			
 			if p.x > 126 - game.walls then
@@ -1175,6 +1221,8 @@ function uparts()
 				p.dy *= -1
 			end
 			
+
+			
 			if ball_hits(p.x,p.y,0,pdl.x,pdl.y,pdl.w,pdl.h) then
 				if ball_deflx(p.x,p.y,p.dx,p.dy,pdl.x,pdl.y,pdl.w,pdl.h) then
 					p.dx *= -1
@@ -1183,7 +1231,19 @@ function uparts()
 				end
 			end
 			
+			
+			
+			if p.x-pdl.x!=0 and p.x<=abs(p.x-pdl.x)  then
+				--[[p.x+=p.x-pdl.x
+				abs(p.x-pdl.x)
+				]]
+			end
+			
+			
+			-- add gravity pull
 			p.dy+=gravity
+		
+				
 			p.x+=p.dx+wind
 			p.y+=p.dy
 
@@ -1191,6 +1251,56 @@ function uparts()
 	end
 end
 
+function brick_parts(bx,by,bw,bh)
+	for i=1,15+(b_streak*3) do
+	
+		local life=rnd(150)
+		
+		if b_streak>=15 then
+			col=7
+		else
+			col=12
+		end
+		
+		if b_streak>5 then
+			life+=100
+		end
+		add(parts,{
+			x=bx+rnd((bw*2)+1)-bw,
+			y=by+rnd((bh*2)+1)-bh,
+			dx=rnd(2)-1,
+			dy=rnd(2)-1,
+			l=life,
+			col=col
+		})
+	end
+end
+
+function ball_parts(bx,by,bdx,bdy)
+	
+	if b_streak>=10 then
+		col=7
+	else
+		col=12
+	end
+	
+	add(parts,{
+		x=bx,
+		y=by,
+		dx=(bdx*-.5)+rnd(1)-.5,
+		dy=(bdy*-.5)+rnd(1)-.5,
+		l=rnd(100),
+		col=col
+	})
+end
+
+function dparts()
+
+	for p in all(parts) do
+		pset(p.x,p.y,p.col)
+	end
+	
+end
 
 
 function uwind()
@@ -1211,49 +1321,9 @@ function uwind()
 	end
 end
 
-function dparts()
 
-	for p in all(parts) do
-		pset(p.x,p.y,p.c)
-	end
-	
-end
 
-function brick_parts(bx,by,bw,bh)
-	for i=1,15+(b_streak*3) do
-	
-		local life=rnd(150)
-		
-		if b_streak>=15 then
-			c=7
-		else
-			c=12
-		end
-		
-		if b_streak>5 then
-			life+=100
-		end
-		add(parts,{
-			x=bx+rnd((bw*2)+1)-bw,
-			y=by+rnd((bh*2)+1)-bh,
-			dx=rnd(2)-1,
-			dy=rnd(2)-1,
-			l=life,
-			col=c
-		})
-	end
-end
 
-function ball_parts(bx,by,bdx,bdy)
-	add(parts,{
-		x=bx,
-		y=by,
-		dx=(bdx*-.5)+rnd(1)-.5,
-		dy=(bdy*-.5)+rnd(1)-.5,
-		l=rnd(100),
-		c=12
-	})
-end
 
 -- fireworks --
 ---------------
@@ -1404,13 +1474,15 @@ end
 -- magnet particles --
 ----------------------
 
+-- update mag particles
 function umag_vfx()
 	
 	dmag_vfx()
-	if pull.power>0 then
+	if mag.power>0 then
 		
 		
-		if #mag_parts < 15 then
+		if #mag_parts < 15 and
+					game.timer%3==0 then
 			 add(mag_parts,
 			 	{
 			 		x=pdl.x+rnd(mag_part_maxh)-(mag_part_maxh/2),
@@ -1419,16 +1491,45 @@ function umag_vfx()
 			 		dx=rnd(2)-1,
 			 		dy=rnd(2)-1,
 			 		
-			 		w=pdl.w+rnd(3),
+			 		w=rnd(3),
 			 		h=pdl.h+rnd(3),
 			 		col=ceil(rnd(3)+13)}
 			 )
 		end
 		
+		for m in all(mag_parts) do
+		
+		
+			
+			if mag.active==true then
+			
+					if m.x<pdl.x then
+						m.x+=mag.power/10
+					else 
+						m.x-=mag.power/10
+					end
+					
+					if m.y<pdl.y then
+						m.y+=mag.power
+					else 
+						m.y-=mag.power
+					end
+					
+			end
+			
+			if m.x+m.w<game.walls or
+						m.x-m.w>127-game.walls then
+				del(mag_parts,m)
+			end
+			
+			m.x+=wind/2
+			
+		end
+		
 	end
 	
 	for m in all(mag_parts) do
-			m.x+=m.dx+pdl.dx-pull.power
+			m.x+=m.dx+(pdl.dx/3)-mag.power
 			m.y+=m.dy
 	end
 	
@@ -1436,13 +1537,13 @@ end
 
 function dmag_vfx()
 
-	for m in all(mag_parts) do
+	--[[for m in all(mag_parts) do
 		rect(m.x-m.w,
 			m.y-m.h,
 			m.x+m.w,
 			m.y+m.h,
 			m.col)
-	end
+	end]]
 
 end
 -->8
@@ -1638,12 +1739,14 @@ __gfx__
 00088800000888000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00008000000080000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000ccccccccccc000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000cccc0000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000066000000000000000000000000006600000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000d666600000000000000000000006666d0000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000dd66660000000000000000000666666d0000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000d666000000000000000000000666dd00000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000dd66666660000000006666666dd0000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000dddddd666666666666ddddd000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000ddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000ddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666
 66688866666888666666866666666666666666666666666666666666666666666666666666666666666666666666666lllllllllllllllllllllllllllll6666
