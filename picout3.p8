@@ -1034,9 +1034,9 @@ function ilevel()
 	level = {}
 	
 	level[1] = '//c8h2w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'
-	level[2] = 'b'--'/----b4/---b5/--b6/-b7/-b7/-b7'
-	level[3] = 'b'--'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
-	level[4] = 'b'--'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
+	level[2] = '/----b4/---b5/--b6/-b7/-b7/-b7'
+	level[3] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
+	level[4] = 'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
 	level[5] = '/c8w5h3mxh1mxw1b8/b8/b8/b8/mnh5mnw5mxh7mxw7b8/b8'
 	level[6] = 'b'--'h2/b8/b7/b6/b5/b4/b3/b2/b1'
 
