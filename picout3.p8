@@ -71,15 +71,15 @@ function ipaddle()
 	pdl = {
 		col=12,
 		sprite=20,
-		acc=.30,
-		max_spd=3.5,
-		friction=0.05,
+		acc=.35,
+		max_spd=3,
+		friction=0.1,
 		x=63,
 		y=115,
 		dx=0,
 		w=11.5,
 		h=1,
-		bounce=-0.4,
+		bounce=-0.35,
 		state='normal',
 		effect=0
 		}
@@ -318,10 +318,6 @@ function uball()
 		sfx(3)
 		b_streak=0
 		pdl_state('hurt')
-		
-		if game.walls<game.mwalls then
-			game.walls+=1
-		end
 		ifwork(hearts[#hearts].x,hearts[#hearts].y,8,75)
 		deli(hearts,#hearts)
 		player.lives-=1
@@ -613,6 +609,38 @@ function gen_bricks(pat)
 		end
 		i+=1
 	end
+	
+	center_bricks()
+end
+
+function center_bricks()
+
+	if #bricks<=0 then
+		return
+	end
+	
+	local b1 = bricks[1]
+	local min_x=b1.x-b1.w
+	local max_x=b1.x+b1.w
+	
+	for b in all(bricks) do
+	
+		if b.x-b.w<min_x then
+			min_x=b.x-b.w
+		elseif b.x+b.w>max_x then
+			max_x=b.x+b.w
+		end
+		
+	end
+	
+
+	local sides = (128-(max_x-min_x))/2
+	offset = sides-min_x
+	
+	for b in all(bricks) do
+		b.x+=offset
+	end 
+
 end
 
 function ubricks()
@@ -734,8 +762,8 @@ function igame()
 	game.state = 'play'
 	game.level = 1
 	game.tlvls = 5
-	game.walls = 5
-	game.spwalls = 5
+	game.walls = 2
+	game.spwalls = 2
 	game.mwalls = 24
 	game.ceil = 8
 	game.ceilc = 6
@@ -792,8 +820,6 @@ function ugame()
 		if btnp(❎) then
 			player.lives=1
 			iload(game.level)
-		elseif btnp(🅾️) then
-			_init()
 		end
 	elseif game.state=='load' then
 		game.timer+=1
@@ -1063,13 +1089,15 @@ end
 function ilevel()
 	level = {}
 	
-	level[1] = '//c8h2w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'
-	level[2] = '/----b4/---b5/--b6/-b7/-b7/-b7'
-	level[3] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
+	level[1] = 'b'--'//c8h2w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'
+	level[2] = 'h2w2//c7-b-------------b/c8-b2-b-b-b-b-b-b2/-b2-b-b-b-b-b-b2/-b2-b-b-b-b-b-b2/-b2-b-b-b-b-b-b2/-b2-b-b-b-b-b-b2/c5-b9b6'
+	level[3] = '/c8mxh1mxw1b8mnh5mnw5b/b9/b9/mnh5mnw5b9/b9/b9/b9/b9'
 	level[4] = 'h4b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/b-b-b-b/-b-b-b-b/'
-	level[5] = '/c8w5h3mxh1mxw1b8/b8/b8/b8/mnh5mnw5mxh7mxw7b8/b8'
+	level[5] = 'b3--b3/b3--b3/b3--b3/b3--b3/b3--b3/b3--b3'
 	level[6] = 'b'--'h2/b8/b7/b6/b5/b4/b3/b2/b1'
-
+	
+	--'/c8w5h3mxh1mxw1b8/b8/b8/b8/mnh5mnw5mxh7mxw7b8/b8'
+	--level 1 
 end
 
 function iload(lvl)
@@ -1099,7 +1127,6 @@ function iload(lvl)
 		bspawn.minh=2
 		bspawn.maxw=5
 		bspawn.maxh=3
-		game.walls=0
 		
 		player.lives=3
 		
@@ -1142,6 +1169,7 @@ function iload(lvl)
 	else
 		iend()
 	end
+	
 	
 	if game.diff=='easy' then
 			pdl.w=15.5
@@ -1670,13 +1698,12 @@ end
 -- to do --
 
 --[[
+
+	1 - brick center function
 	
-	1 - paddle floating animation
+	2 - paddle floating animation
 					 
-	2 - bg clouds
-						that float calmly in the
-						background
-							
+
 	3 - sliding banner
 					-banner slides down to
 						center between levels
