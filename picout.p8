@@ -54,12 +54,12 @@ function _draw()
 	line(pdl.x+pdl.w,pdl.y-pdl.h,pdl.x+pdl.w,0,7)
 	fillp()]]
 	
-	
+	--debug = mag.power
 	if debug!=nil then
 		print(debug,0,0)
 	end
 	
-	rect(0,126,127,127,7)
+	
 	
 	
 	
@@ -859,7 +859,6 @@ end
 function uplay()
 	uwind()
 	uclouds()
-	umag_vfx()
 	upaddle()
 	screen_shake()
 	uball()
@@ -1079,6 +1078,9 @@ function dbounds()
 	
 	-- ceiling --
 	rectfill(0,0,127,game.ceil,game.ceilc)
+	
+	-- floor --
+	rectfill(0,126,127,127,game.ceilc)
 end
 
 
@@ -1229,6 +1231,9 @@ function iparts()
 	
 	mag_part_maxw = 0
 	mag_part_maxh = 0
+	max_magparts = 15
+	
+	drip_parts = {}
 	
 end
 
@@ -1285,6 +1290,10 @@ function uparts()
 
 		end
 	end
+	
+	umag_vfx()
+	udrip()
+	
 end
 
 function brick_parts(bx,by,bw,bh)
@@ -1335,6 +1344,8 @@ function dparts()
 	for p in all(parts) do
 		pset(p.x,p.y,p.col)
 	end
+	
+	ddrip()
 	
 end
 
@@ -1513,20 +1524,20 @@ end
 -- update mag particles
 function umag_vfx()
 	
-	dmag_vfx()
 	if mag.power>0 then
-		
-		
-		if #mag_parts < 15 and
-					game.timer%3==0 then
+		if #mag_parts < max_magparts and
+					game.timer%10==0 and
+					btn(🅾️) then
+					
 			 add(mag_parts,
 			 	{
-			 		x=pdl.x+rnd(mag_part_maxh)-(mag_part_maxh/2),
-			 		y=pdl.y+rnd(mag_part_maxw)-(mag_part_maxw/2),
+			 		x=ball.x,
+			 		y=ball.y,
 			 		
-			 		dx=rnd(2)-1,
-			 		dy=rnd(2)-1,
+			 		dx=rnd(1)-0.5,
+			 		dy=rnd(1)-0.5,
 			 		
+			 		r=1+rnd(3),
 			 		w=rnd(3),
 			 		h=pdl.h+rnd(3),
 			 		col=ceil(rnd(3)+13)}
@@ -1540,47 +1551,95 @@ function umag_vfx()
 			if mag.active==true then
 			
 					if m.x<pdl.x then
-						m.x+=mag.power/10
-					else 
-						m.x-=mag.power/10
+						m.dx+=mag.power/80
+					elseif m.x>pdl.x then
+						m.dx-=mag.power/80
 					end
 					
 					if m.y<pdl.y then
-						m.y+=mag.power
-					else 
-						m.y-=mag.power
+						m.dy+=mag.power/80
+					elseif m.y>pdl.y then
+						m.dy-=mag.power/80
 					end
 					
 			end
-			
-			if m.x+m.w<game.walls or
-						m.x-m.w>127-game.walls then
-				del(mag_parts,m)
-			end
-			
-			m.x+=wind/2
-			
 		end
 		
 	end
 	
+
+	
 	for m in all(mag_parts) do
-			m.x+=m.dx+(pdl.dx/3)-mag.power
-			m.y+=m.dy
+		if m.x+30<game.walls or
+				m.x-30>127-game.walls or
+				m.y-30>127 or
+				m.y+30<0 then
+			del(mag_parts,m)
+		end
+		
+		m.x+=m.dx+(pdl.dx/5)+(wind/2)
+		m.y+=m.dy
+			
 	end
 	
 end
 
 function dmag_vfx()
 
-	--[[for m in all(mag_parts) do
-		rect(m.x-m.w,
+ --[[for m in all(mag_parts) do
+		--[[rect(m.x-m.w,
 			m.y-m.h,
 			m.x+m.w,
 			m.y+m.h,
 			m.col)
+		circ(m.x,
+			m.y,
+			m.r,
+			m.col)
 	end]]
+	
+	
 
+end
+
+function udrip()
+	if btn(🅾️) then
+		if game.timer%3==0 then
+					
+			local col=7
+			if b_streak>=15 then
+				col=12
+			end
+			add(drip_parts,{
+				x=ball.x,
+				y=ball.y+ball.r-1,
+				t=0,
+				life=20+ceil(rnd(60)),
+				h=0,
+				col=col
+			})
+		end
+	end
+	
+	for d in all(drip_parts) do
+		d.t+=1
+		if d.t<d.life/2 then
+		 d.h+=mag.power/5
+		elseif d.t<d.life then
+			d.h-=mag.power/5
+		else
+			del(drip_parts,d)
+		end
+		
+		d.y+=mag.power/10
+		
+	end
+end
+
+function ddrip()
+	for d in all(drip_parts) do
+		line(d.x,d.y,d.x,d.y+d.h,d.col)
+	end
 end
 -->8
 -- notif banner --
@@ -1669,11 +1728,21 @@ function uhearts()
 	for h in all(hearts) do
 		h.anim_t-=1
 		h.anim_t-=b_streak/5
+		
+		-- blue hearts during streak
+		if b_streak>=15 and
+					h.spr==0 then
+			h.spr+=16
+		elseif b_streak<15 and
+									h.spr>=16 then
+			h.spr-=16
+		end
+		
 		if h.anim_t<=0 then
 			local stage = h.anim_stg
 			if stage==0 then
 				h.spr-=1
-				if h.spr==0 then
+				if h.spr==0 or h.spr==16 then
 					h.anim_stg=1
 					h.anim_t+=25
 					h.y+=1
@@ -1682,7 +1751,7 @@ function uhearts()
 				end
 			elseif stage==1 then
 				h.spr+=1
-				if h.spr==2 then
+				if h.spr==2 or h.spr==18 then
 					h.anim_stg=0
 					h.anim_t+=10
 					h.y-=1
@@ -1708,13 +1777,14 @@ end
 --[[
 
 	1 - better level for 3
-	
-	2 - magnet particles on ball
-						and over paddle
 						
 	3 - title song
 	
 	4 - tweak game loop song
+	
+	5 - change bg clouds color
+					maybe update cloud color
+						each level?
 					
 	5 - "press 🅾️ to activate magnet"
 					displayed in level 1
@@ -1781,12 +1851,12 @@ __gfx__
 00008000000080000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000066000000000000000000000000006600000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000d666600000000000000000000006666d0000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000dd66660000000000000000000666666d0000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000d666000000000000000000000666dd00000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000dd66666660000000006666666dd0000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000dddddd666666666666ddddd000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000ddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000
+00cc0cc0000ccc000000c00000000000d666600000000000000000000006666d0000000000000000000000000000000000000000000000000000000000000000
+0ccccccc00ccccc0000ccc0000000000dd66660000000000000000000666666d0000000000000000000000000000000000000000000000000000000000000000
+0ccccccc00ccccc0000ccc00000000000d666000000000000000000000666dd00000000000000000000000000000000000000000000000000000000000000000
+00ccccc0000ccc00000ccc000000000000dd66666660000000006666666dd0000000000000000000000000000000000000000000000000000000000000000000
+000ccc00000ccc000000c000000000000000dddddd666666666666ddddd000000000000000000000000000000000000000000000000000000000000000000000
+0000c0000000c0000000c00000000000000000000ddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000ddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666
