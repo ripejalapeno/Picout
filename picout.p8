@@ -323,6 +323,7 @@ function uball()
 		ifwork(hearts[#hearts].x,hearts[#hearts].y,8,75)
 		deli(hearts,#hearts)
 		player.lives-=1
+		player.score-=ceil(player.score*.1)
 		shake+=.20
 		if player.lives==1 then
 			shake+=.3
@@ -359,6 +360,12 @@ function uball()
 	
 	if ceil(rnd(6)) == 6 then
 		ball_parts(ball.x,ball.y,ball.dx,ball.dy)
+	end
+	
+	if b_streak>=16 then
+		ball.col=12
+	else
+	 ball.col=7
 	end
 	
 end
@@ -701,6 +708,7 @@ function ubricks()
 			
 			b_hit+=1
 			b_streak+=1
+			player.score+=1*b_streak
 		end
 	end
 	
@@ -793,6 +801,7 @@ function igame()
 	
 	player.lives = 5
 	player.lost = 0
+	player.score = 0
 	hurt=10
 	
 	parts = {}
@@ -802,7 +811,7 @@ function igame()
 	shake = 0
 	shake_lvl = 32
 	
-	pal(4,5+128,1)
+	pal(4,12+128,1)
 	pal(3,1+128,1)
 	pal(13,3+128,1)
 	pal(14,12+128,1)
@@ -829,7 +838,7 @@ function ugame()
 			iload(game.level)
 		end
 	elseif game.state=='end' then
-		if btnp(❎) then
+		if btnp(❎) and #a_credits==#credits then
 			_init()
 		end
 	elseif game.state=='lose' then
@@ -865,11 +874,11 @@ function uplay()
 	ubricks()
 	uparts()
 	ufworks()
-	ubanner()
 	uhearts()
 	if game.timer > 15 then
 		banner.bgc = 4
 		banner.textc = 7
+		uscore()
 	end
 	game.timer+=1
 end
@@ -907,7 +916,6 @@ function imenu()
 end
 
 function umenu()
-	ubanner()
 	uclouds()
 	screen_shake()
 	game.timer+=1
@@ -930,7 +938,6 @@ function uload()
 	uclouds()
 	uparts()
 	ufworks()
-	ubanner()
 	screen_shake()
 end
 
@@ -998,8 +1005,11 @@ function uwin()
 	end
 		
 	
-	if game.timer==300 then
+	if game.timer==300 and game.state=='win' then
 		change_bnr('press ❎')
+	elseif game.state=='end' then
+		change_bnr('final score: '..player.score)
+		center_bnr()
 	end
 	
 	game.timer+=1
@@ -1025,12 +1035,25 @@ end
 
 function uend()
 	uwin()
+	
+	if btnp(❎) then
+		
+		add(a_credits,
+			credits[#a_credits+1]
+		)
+		
+		if credits[#a_credits]=='' then
+			add(a_credits,
+				credits[#a_credits+1]
+			)
+		end
+	end
 end
 
 function dend()
 	dwin()
 	i=0
-	for c in all(credits) do
+	for c in all(a_credits) do
 		print(c,game.walls+5,game.ceil+3+(i*6),7)
 		i+=1
 	end
@@ -1046,6 +1069,7 @@ function ilose()
 	sfx(5)
 	change_bnr('you lose!')
 	center_bnr()
+	player.score-=ceil(player.score/2)
 	game.timer=0
 end
 
@@ -1301,7 +1325,7 @@ function brick_parts(bx,by,bw,bh)
 	
 		local life=rnd(150)
 		
-		if b_streak>=15 then
+		if b_streak>=16 then
 			col=7
 		else
 			col=12
@@ -1444,35 +1468,56 @@ end
 function uclouds()
 
 	if #bg_clouds<7 then
+	
+		if b_streak>=16 then
+			col=6
+		else
+			col=3
+		end
+		
 		add(bg_clouds,{
 			x=rnd(64)-128,
 			y=rnd(64),
 			dx=rnd(1)+.5,
 			w=rnd(30)+20,
 			h=rnd(5)+4,
-			col=3
+			col=col
 		})
 	end
 	
-	if #mg_clouds<8 then
+	if #mg_clouds<6 then
+	
+		if b_streak>=16 then
+			col=6
+		else
+			col=4
+		end
+		
 		add(mg_clouds,{
 			x=rnd(64)-128,
 			y=rnd(64)+32,
 			dx=rnd(1)+.5,
 			w=rnd(25)+15,
-			h=rnd(4)+3,
-			col=1
+			h=rnd(4)+2,
+			col=col
 		})
 	end
 	
 	if #fg_clouds<10 then
+	
+		if b_streak>=16 then
+			col=6
+		else
+			col=2
+		end
+		
 		add(fg_clouds,{
 			x=rnd(64)-128,
 			y=rnd(64)+64,
 			dx=rnd(2)+1,
 			w=rnd(25)+15,
 			h=rnd(3)+2,
-			col=2
+			col=col
 		})
 	end
 	
@@ -1661,9 +1706,9 @@ function ibanner()
 	
 end
 
--- update banner
-function ubanner()
-	
+-- update score
+function uscore()
+	banner.notif=player.score
 end
 
 function change_bnr(text)
@@ -1730,10 +1775,10 @@ function uhearts()
 		h.anim_t-=b_streak/5
 		
 		-- blue hearts during streak
-		if b_streak>=15 and
+		if b_streak>=16 and
 					h.spr==0 then
 			h.spr+=16
-		elseif b_streak<15 and
+		elseif b_streak<16 and
 									h.spr>=16 then
 			h.spr-=16
 		end
@@ -1829,7 +1874,7 @@ teamwork cast / lazy devs
 ]]--
 
 credits = {
-	'picout-8',
+	'picout',
 	'',
 	'created by',
 	'	ripe jalapeno studios',
@@ -1838,8 +1883,12 @@ credits = {
 	' christian',
 	'	from lazy devs',
 	'	for collision code',
-	'	and brick generation'
+	'	and brick generation',
+	'',
+	'thanks for playing!'
 	}
+	
+a_credits = {credits[1]}
 	 
 __gfx__
 00000000000000000000000000000000066cccccccccccccccccc660000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1851,12 +1900,12 @@ __gfx__
 00008000000080000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000066000000000000000000000000006600000000000000000000000000000000000000000000000000000000000000000
-00cc0cc0000ccc000000c00000000000d666600000000000000000000006666d0000000000000000000000000000000000000000000000000000000000000000
-0ccccccc00ccccc0000ccc0000000000dd66660000000000000000000666666d0000000000000000000000000000000000000000000000000000000000000000
-0ccccccc00ccccc0000ccc00000000000d666000000000000000000000666dd00000000000000000000000000000000000000000000000000000000000000000
-00ccccc0000ccc00000ccc000000000000dd66666660000000006666666dd0000000000000000000000000000000000000000000000000000000000000000000
-000ccc00000ccc000000c000000000000000dddddd666666666666ddddd000000000000000000000000000000000000000000000000000000000000000000000
-0000c0000000c0000000c00000000000000000000ddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000
+00990990000999000000900000000000d666600000000000000000000006666d0000000000000000000000000000000000000000000000000000000000000000
+09999999009999900009990000000000dd66660000000000000000000666666d0000000000000000000000000000000000000000000000000000000000000000
+099999990099999000099900000000000d666000000000000000000000666dd00000000000000000000000000000000000000000000000000000000000000000
+0099999000099900000999000000000000dd66666660000000006666666dd0000000000000000000000000000000000000000000000000000000000000000000
+000999000009990000009000000000000000dddddd666666666666ddddd000000000000000000000000000000000000000000000000000000000000000000000
+00009000000090000000900000000000000000000ddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000ddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000
 __label__
 66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666
