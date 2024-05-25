@@ -866,6 +866,7 @@ end
 
 -- update play state
 function uplay()
+	uhelp()
 	uwind()
 	uclouds()
 	upaddle()
@@ -896,6 +897,7 @@ function dplay()
 	--dlives()
 	dhearts()
 	dfworks()
+	dhelp()
 	--[[if player.hurt>0 then
 		fillp(░)
 		rectfill(0,game.ceil+1,128,128,5)
@@ -909,13 +911,14 @@ end
 
 function imenu()
 	game.state='menu'
-	change_bnr('press ❎ to start')
+	change_help('press ❎/x to start')
 	center_bnr()
 	game.timer=0
 	gen_bricks(level[1])
 end
 
 function umenu()
+	uhelp()
 	uclouds()
 	screen_shake()
 	game.timer+=1
@@ -924,8 +927,8 @@ end
 function dmenu()
 	dclouds()
 	dbounds()
-	dbanner()
 	dbricks()
+	dhelp()
 end
 
 -- load state --
@@ -1152,6 +1155,7 @@ function iload(lvl)
  banner.bgc=7
  banner.textc=5
  game.walls=game.spwalls
+ ihelp()
  ibrick()
 	ipaddle()
 	rball()
@@ -1704,6 +1708,78 @@ function ibanner()
 
 	hearts = {}
 	
+	help = {}
+	
+	help.state = 'serve'
+	help.msg = 'press ❎/x to serve ball'
+	help.x = 30
+	help.y = 63
+	help.w = 0
+	help.textc = 7
+	help.timer = 0
+	
+end
+
+function ihelp()
+	
+	help.timer=0
+	if game.level==1 then
+		help.state = 'serve'
+		change_help('press ❎/x to serve ball')
+	elseif game.level==2 then
+		help.state = 'tip'
+	elseif game.level==3 then
+		help.state = 'tip'
+	elseif game.level==4 then
+	 help.state = 'tip'
+	elseif game.level==5 then
+		help.state = 'tip'
+	end
+	
+end
+
+function uhelp()
+	if help.state == 'serve' then
+		if btn(❎) then
+			help.state = 'magnet'
+			change_help('hold 🅾️/c to activate magnet')
+		end
+	elseif help.state == 'magnet' then
+		if btn(🅾️) then
+			help.timer+=1
+			if help.timer>=120 then
+				help.state = 'good luck!'
+				change_help('good luck!')
+				help.timer = 0
+			end
+		end
+	elseif help.state=='good luck!' then
+		help.timer+=1
+		if help.timer > 300 then
+			help.state='none'
+			help.msg=nil
+			help.timer=0
+		end
+	end
+end
+
+function change_help(text)
+	help.msg=text
+	help.w=#help.msg*4
+	for c in all(text) do
+		if c == '❎' or c=='🅾️' then
+			help.w+=4
+		end
+	end
+	
+	-- center help
+	help.x=(128-help.w)/2
+end
+
+function dhelp()
+	if help.msg != nil then
+		print(help.msg,help.x,help.y,help.textc)
+	end
 end
 
 -- update score
@@ -1827,9 +1903,6 @@ end
 	
 	4 - tweak game loop song
 	
-	5 - change bg clouds color
-					maybe update cloud color
-						each level?
 					
 	5 - "press 🅾️ to activate magnet"
 					displayed in level 1
