@@ -10,6 +10,7 @@ function _init()
 	ibrick()
 	iparts()
 	imenu()
+	icredits()
 	debug=nil
 	camera(0,0)
 end
@@ -568,7 +569,12 @@ function gen_bricks(pat)
 			brick.x+=(brick.w*2)+2
 			
 		elseif c=='c' then
-			brick.col=pat[i+1]
+			if pat[i+2]>='0' and pat[i+2]<='9' then
+				brick.col=10+pat[i+2]
+				skip+=1
+			else
+				brick.col=pat[i+1]
+			end
 			skip+=1
 			
 		elseif c == 'w' then
@@ -698,6 +704,7 @@ function ubricks()
 				
 				for i=0,flr(b_streak/5) do
 					if #bricks>0 then
+						player.score+=1*b_streak
 						b2=bricks[ceil(rnd(#bricks))]
 						brick_parts(b2.x,b2.y,b2.w,b2.h)
 						del(bricks, b2)
@@ -913,7 +920,7 @@ end
 
 function imenu()
 	game.state='menu'
-	change_help('press ❎/x to start')
+	ihelp()
 	center_bnr()
 	game.timer=0
 	gen_bricks(level[1])
@@ -1138,7 +1145,7 @@ function ilevel()
 	
 	level[1] = '//c8h2w1b3-b3-b3-b3-b-b-b3/b-b--b--b---b-b-b-b--b-/b3--b--b---b-b-b-b--b/b----b--b---b-b-b-b--b/b---b3-b3-b3-b3--b'--
 	level[2] = 'h2w3//c7-b-----------b/c8-b--b-----b--b/-b2-b-b-b-b-b2/-b2-b-b-b-b-b2/-b2-b-b-b-b-b2/-b2-b-b-b-b-b2/c5-b9b4/c5-b9b4'--
-	level[3] = '/c2mxh1mxw1b8mnh5mnw5b/b9/c2b9/c5b9/c5b9/c2b9/b9/c2b9'--
+	level[3] = '/c5mxh1mxw1b8mnh5mnw5b/c5b9/c6b9/c14b9/c14b9/c6b9/c5b9/c5b9'--
 	level[4] = 'h2w5b9b/b9b/b2------b2/b2------b2/b2------b2/b2------b2/b2------b2/c5b3----b3/c5b4--b4/c5b4--b4/c5--b2--b2--'--
 	level[5] = '/c0h3w4b9b2/c0b9b2/c0b3--b--b3/c0b9b2/c0b4---b4/c0b9b2/c0b9b2'--
 	level[6] = 'b'--'h2/b8/b7/b6/b5/b4/b3/b2/b1'
@@ -1730,7 +1737,10 @@ end
 function ihelp()
 	
 	help.timer=0
-	if game.level==1 then
+	if game.state == 'menu' then
+		help.state = 'menu'
+		change_help('press ❎/x to start')
+	elseif game.level==1 then
 		help.state = 'serve'
 		change_help('press ❎/x to serve ball')
 	elseif game.level==2 then
@@ -1953,6 +1963,10 @@ teamwork cast / lazy devs
 				
 ]]--
 
+function icredits()
+	a_credits = {credits[1]}
+end
+
 credits = {
 	'picout',
 	'',
@@ -1960,15 +1974,15 @@ credits = {
 	'	ripe jalapeno studios',
 	'',
 	'special thanks to',
-	' christian',
-	'	from lazy devs',
+	' krystian majewski',
+	'	from lazy devs academy',
 	'	for collision code',
 	'	and brick generation',
 	'',
 	'thanks for playing!'
 	}
 	
-a_credits = {credits[1]}
+
 	 
 __gfx__
 00000000000000000000000000000000066cccccccccccccccccc660000000000000000000000000000000000000000000000000000000000000000000000000
@@ -2135,7 +2149,7 @@ d11000001c7511c7511c7511c7511c7511c7511c7511c75116750167501675016750187501875018
 d1100000187511875118751187511875118751187511875118740187401874018740187301873018720187101c7001d7001d7001c7001c7001c7001c7001c7001670016700167001670015700157001370013700
 d11000001d7511d7511d7511d7511b7511b7511a7511a751187401874018740187401874018740117501175016750187501a75016750187501875018750187500000000000000000000000000000000000000000
 d11000001675016750167501675016750167501675016750157401474013730117301172011720117201173013750137501075010750107501075010750107501074010740107401074010730107301072010720
-611000000033300003000030000327620276002760000003003330000300333000031b620000000f6000f6510033300003000030000327620000032761000003003330000300003000031b620000030033300003
+611000000033300003000030000327620276002760000003003330000300333000031b620000000f6000f6510033300003000030000327620000032760000003003330000300003000031b620000030033300003
 d11000001c7511c7511c7511c7511c7511c7511c7511c7511d7511d7511d7511d7511d7511d7511d7511d7511d7511d7511d7511d7001a7501a7511a7511b7002275022751227511a70021750217512175121751
 d11000001f7411f7411f7411f7411f7411f7411f7411f7411b7401b7401b7401b7401a7401a7401a7401a7402274121741217411f7401f7401f7401f7401f7401d7401d7401d7401d7401f7401f7401374013740
 d71000001c7411c7411c7411c7411d7411d7411f7411f7411d7411d7411d7411d7411c7411c7411c7411c741187411874118741187401b7411b7411d7411d7401a7411a7411a7411a74018741187411874118741
